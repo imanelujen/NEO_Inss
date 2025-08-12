@@ -11,7 +11,7 @@
 
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
-   @include('blog.navbar')
+   <!--@include('blog.navbar')-->
     <div class="container mx-auto p-4 max-w-2xl">
         <h1 class="text-3xl font-bold text-blue-600 mb-6 text-center">Devis Assurance Auto</h1>
 @if ($errors->any())
@@ -36,7 +36,7 @@
             </div>
 </div>
         <!--form-->
-        <form method="POST" action="{{ route('simulation.store') }}" class="bg-white p-6 rounded-lg shadow-md" x-data="formValidation()">
+        <form method="POST" action="{{ route('auto.store') }}" class="bg-white p-6 rounded-lg shadow-md" x-data="formValidation()">
             @csrf
             <input type="hidden" name="step" value="{{$step}}">
             @if ($step == 1)
@@ -87,9 +87,9 @@
                 </div>
 <!--vehicule value-->
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Valeur du Véhicule (€)</label>
+                    <label class="block text-gray-700 font-medium mb-2">Valeur du Véhicule (D)</label>
                     <input type="number" name="vehicle_value" x-model="vehicle_value" @input="validateVehicleValue()" value="{{ $data['vehicle_value'] ?? '' }}" min="1000" required class="w-full border rounded p-2" :class="{ 'border-red-500': vehicleValueError }">
-                    <span x-show="vehicleValueError" class="text-red-500 text-sm">La valeur doit être supérieure ou égale à 1000 €.</span>
+                    <span x-show="vehicleValueError" class="text-red-500 text-sm">La valeur doit être supérieure ou égale à 1000 DH.</span>
                     @error('vehicle_value') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
 <!--vehicule value-->
@@ -101,7 +101,7 @@
                 </div>
 
    <div class="flex justify-between">
-                    <a href="{{ route('simulation.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Réinitialiser</a>
+                    <a href="{{ route('auto.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Réinitialiser</a>
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Suivant</button>
                 </div>
 
@@ -124,7 +124,7 @@
                     @error('historique_accidents') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
                 <div class="flex justify-between">
-                    <a href="{{ route('simulation.show', ['step' => 1]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
+                    <a href="{{ route('auto.show', ['step' => 1]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Obtenir Devis</button>
                 </div>
 
@@ -136,7 +136,7 @@
                         @foreach (['basic' => 'Basique', 'standard' => 'Standard', 'premium' => 'Premium'] as $key => $label)
                             <div class="border rounded-lg p-4 shadow-md {{ $key == 'standard' ? 'border-blue-600' : 'border-gray-300' }}">
                                 <h3 class="text-lg font-semibold mb-2">{{ $label }}</h3>
-                                <p class="text-2xl font-bold text-blue-600">{{ $data['formules_choisis'][$key] }} €</p>
+                                <p class="text-2xl font-bold text-blue-600">{{ $data['formules_choisis'][$key] }} DH</p>
                                 <p class="text-sm text-gray-600">/an</p>
                                 <ul class="mt-2 text-sm text-gray-700">
                                     <li>{{ $key == 'basic' ? 'Responsabilité civile' : ($key == 'standard' ? 'RC + Vol/Incendie' : 'RC + Tous risques') }}</li>
@@ -145,7 +145,7 @@
                         @endforeach
                     </div>
                     <div class="mt-6 flex justify-center">
-                        <a href="{{ route('simulation.reset') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Nouveau Devis</a>
+                        <a href="{{ route('auto.reset') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Nouveau Devis</a>
                     </div>
                 </div>
             @endif

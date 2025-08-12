@@ -12,6 +12,7 @@ class CreateContratsTable extends Migration
             $table->foreignId('id_client')->constrained('clients')->onDelete('cascade');
             $table->foreignId('id_devis')->constrained('devis')->onDelete('cascade');
             $table->foreignId('id_agent')->constrained('agences')->onDelete('cascade');
+            $table->foreignId('id_paiement')->nullable()->constrained('paiements')->onDelete('set null');
             $table->date('start_date');
             $table->date('end_date');
             $table->decimal('prime', 10, 2);

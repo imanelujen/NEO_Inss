@@ -22,7 +22,7 @@ class SimulationController extends Controller {
             Log::error('WordPress API error: ' . $e->getMessage());
             $posts = [];
         }
-        return view('simulation.form', compact('step', 'data','posts'));
+        return view('auto.form', compact('step', 'data','posts'));
     }
     public function store(Request $request) {
         Log::info('store method called with step: ' . $request->input('step'));
@@ -48,7 +48,7 @@ class SimulationController extends Controller {
                     'tax_horsepower.required' => 'La puissance fiscale est requise.',
                     'tax_horsepower.min' => 'La puissance fiscale doit être positive.',
                     'vehicle_value.required' => 'La valeur du véhicule est requise.',
-                    'vehicle_value.min' => 'La valeur doit être supérieure ou égale à 1000 €.',
+                    'vehicle_value.min' => 'La valeur doit être supérieure ou égale à 1000 DH.',
                     'registration_date.required' => 'La date de mise en circulation est requise.',
                     'registration_date.before' => 'La date doit être antérieure à aujourd\'hui.',
                 ]);
@@ -56,7 +56,7 @@ class SimulationController extends Controller {
                 $data = array_merge($data, $validated);
                 $request->session()->put('simulation_data', $data);
                 Log::info('Session data stored', ['simulation_data' => $data]);
-                return redirect()->route('simulation.show', ['step' => 2]);
+                return redirect()->route('auto.show', ['step' => 2]);
         } elseif ($step == 2) {
             $validated = $request->validate([
                     'date_obtention_permis' => 'required|date|before:today',
@@ -103,9 +103,9 @@ class SimulationController extends Controller {
                     'date_creation' => now(),
                     'date_expiration' => now()->addDays(30),
                     'montant_base' => $base_rate,
-                    'garanties_incluses' => json_encode(['Responsabilité civile', 'collision']),
+                    'OFFRE_CHOISIE' => json_encode(['offer' => 'none']),
                     'status' => 'BROUILLON',
-                    'typedevis' => 'SIMULATION',
+                    'typedevis' => 'AUTO',
                     'id_simulationsession' => $session->id,
                 ]);
                 $vehicule = Vehicule::create([
@@ -138,14 +138,14 @@ class SimulationController extends Controller {
                 $data['formules_choisis'] = $formules_choisis;
                 $request->session()->put('simulation_data', $data);
                 Log::info('Redirecting to Step 3', ['simulation_data' => $data]);
-                return redirect()->route('simulation.show', ['step' => 3]);
+                return redirect()->route('auto.show', ['step' => 3]);
        }
             Log::warning('Invalid step', ['step' => $step]);
-            return redirect()->route('simulation.show', ['step' => 1]);
+            return redirect()->route('auto.show', ['step' => 1]);
 
         } catch (\Exception $e) {
             Log::error('Store method error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return redirect()->route('simulation.show', ['step' => 1])->withErrors(['error' => 'Une erreur est survenue. Veuillez réessayer.']);
+            return redirect()->route('auto.show', ['step' => 1])->withErrors(['error' => 'Une erreur est survenue. Veuillez réessayer.']);
         }
     }
 
@@ -153,6 +153,145 @@ class SimulationController extends Controller {
     {
         $request->session()->forget('simulation_data');
         Log::info('Session reset');
-        return redirect()->route('simulation.show', ['step' => 1]);
+        return redirect()->route('auto.show', ['step' => 1]);
     }
+    public function selectOffer(Request $request, $devis_id)
+    {
+        $validated = $request->validate([
+            'offer' => 'required|in:tiers,tous_risques,assistance',
+        ]);
+
+        try {
+            $devis = Devis::findOrFail($devis_id);
+            $offer_factors = [
+                'tiers' => 1.0,
+                'tous_risques' => 1.3,
+                'assistance' => 1.1,
+            ];
+            $montant_base = $devis->montant_base * $offer_factors[$validated['offer']];
+            $devis->update([
+                'OFFRE_CHOISIE' => json_encode(['offer' => $validated['offer']]),
+                'montant_base' => $montant_base,
+                'status' => 'FINALISE',
+            ]);
+            $devisAuto = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
+            $devisAuto->update(['quote_amount' => $montant_base]);
+
+            return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                ->with('success', 'Offre sélectionnée avec succès.');
+        } catch (\Exception $e) {
+            Log::error('Offer selection error: ' . $e->getMessage());
+            return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                ->withErrors(['error' => 'Échec de la sélection de l\'offre.']);
+        }
+    }
+
+    public function downloadQuote(Request $request, $devis_id)
+    {
+        $devis = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
+        $main_devis = Devis::findOrFail($devis_id);
+        if ($main_devis->status !== 'FINALISE') {
+            return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                ->withErrors(['error' => 'Veuillez sélectionner une offre avant de télécharger.']);
+        }
+        $pdf = PDF::loadView('auto.pdf', ['quote' => $devis, 'offer' => json_decode($main_devis->OFFRE_CHOISIE, true)]);
+        return $pdf->download('devis_auto_' . $devis->id . '.pdf');
+    }
+
+    public function emailQuote(Request $request, $devis_id)
+    {
+        $request->validate(['email' => 'required|email']);
+        $devis = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
+        $main_devis = Devis::findOrFail($devis_id);
+        if ($main_devis->status !== 'FINALISE') {
+            return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                ->withErrors(['error' => 'Veuillez sélectionner une offre avant d\'envoyer.']);
+        }
+
+        try {
+            Mail::to($request->email)->send(new AutoQuoteMail($devis, json_decode($main_devis->OFFRE_CHOISIE, true)));
+            $main_devis->update(['status' => 'ENVOYE']);
+            return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                ->with('success', 'Devis envoyé par e-mail avec succès.');
+        } catch (\Exception $e) {
+            Log::error('Email sending error: ' . $e->getMessage());
+            return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                ->withErrors(['error' => 'Échec de l\'envoi de l\'e-mail.']);
+        }
+    }
+
+    public function subscribe(Request $request, $devis_id)
+    {
+        $main_devis = Devis::findOrFail($devis_id);
+        if ($main_devis->status !== 'FINALISE') {
+            return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                ->withErrors(['error' => 'Veuillez sélectionner une offre avant de souscrire.']);
+        }
+        if (!auth('api')->check()) {
+            return redirect()->route('login.show')->with(['devis_id' => $devis_id, 'type' => 'auto']);
+        }
+        $devis = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
+        return view('auto.subscribe', ['devis' => $devis, 'offer' => json_decode($main_devis->OFFRE_CHOISIE, true)]);
+    }
+
+    public function storeSubscription(Request $request, $devis_id)
+    {
+        $client = auth('api')->user();
+        if (!$client) {
+            return redirect()->route('login.show')->with(['devis_id' => $devis_id, 'type' => 'auto']);
+        }
+
+        $validated = $request->validate([
+            'address' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'garanties' => 'required|array',
+            'franchise' => 'required|numeric|min:0',
+        ]);
+
+        try {
+            $main_devis = Devis::findOrFail($devis_id);
+            $devis = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
+            $vehicule = Vehicule::create([
+                'type_vehicule' => $devis->vehicle_type,
+                'marque' => $devis->brand,
+                'modele' => $devis->model,
+                'annee' => $devis->year,
+            ]);
+            $conducteur = Conducteur::create([
+                'date_permis' => $devis->license_date,
+                'bonus_malus' => $devis->bonus_malus,
+                'historique_accidents' => $devis->accident_history,
+            ]);
+
+            $contrat = Contrat::create([
+                'type_contrat' => 'AUTO',
+                'id_client' => $client->id,
+                'id_devis' => $devis->id_devis,
+                'id_agent' => 1, // Default agent; adjust as needed
+                'start_date' => now()->toDateString(),
+                'end_date' => now()->addYear()->toDateString(),
+                'prime' => $devis->quote_amount,
+                'statut' => 'ACTIF',
+            ]);
+
+            ContratAuto::create([
+                'id_contrat' => $contrat->id,
+                'id_vehicule' => $vehicule->id,
+                'id_conducteur' => $conducteur->id,
+                'franchise' => $validated['franchise'],
+                'garanties' => $validated['garanties'],
+            ]);
+
+            $main_devis->update(['status' => 'ACCEPTE']);
+            return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                ->with('success', 'Souscription effectuée avec succès.');
+        } catch (\Exception $e) {
+            Log::error('Subscription error: ' . $e->getMessage());
+            return redirect()->route('auto.subscribe', ['devis_id' => $devis_id])
+                ->withErrors(['error' => 'Échec de la souscription.']);
+        }
+    }
+
+
+
 }

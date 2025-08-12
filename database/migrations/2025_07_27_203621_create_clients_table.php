@@ -18,9 +18,6 @@ class CreateClientsTable extends Migration
             $table->string('password');
             $table->enum('statut', ['ACTIF', 'INACTIF', 'SUSPENDU'])->default('ACTIF');
             $table->date('date_inscription')->useCurrent();
-            $table->foreignId('id_conducteur')
-                  ->constrained('conducteurs')
-                  ->onDelete('cascade')->nullable();
             $table->timestamps();
         });
     }

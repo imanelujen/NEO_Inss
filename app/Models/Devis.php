@@ -4,7 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 class Devis extends Model
 {
     protected $fillable = [
-        'date_creation', 'date_expiration', 'montant_base', 'garanties_incluses',
+        'date_creation', 'date_expiration', 'montant_base', 'OFFRE_CHOISIE',
         'status', 'typedevis', 'id_simulationsession'
     ];
     protected $casts = [

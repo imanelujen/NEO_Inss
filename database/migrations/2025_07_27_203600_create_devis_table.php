@@ -11,7 +11,7 @@ class CreateDevisTable extends Migration
             $table->date('date_creation');
             $table->date('date_expiration');
             $table->double('montant_base', 10, 2);
-            $table->json('garanties_incluses');
+            $table->json('OFFRE_CHOISIE');
             $table->enum('status', [
                 'BROUILLON',
                 'EN_COURS',
@@ -23,10 +23,9 @@ class CreateDevisTable extends Migration
             ])->default('BROUILLON');
 
             $table->enum('typedevis', [
-                'SIMULATION',
-                'OFFICIEL',
-                'RENOUVELLEMENT'
-            ])->default('SIMULATION');
+                'AUTO',
+                'HABITATION',
+            ]);
 
             $table->foreignId('id_simulationsession')->constrained('simulation_sessions')->onDelete('cascade');
             $table->timestamps();
