@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\SimulationSession;
 use App\Models\Devis;
 use App\Models\DevisHabitation;
-use App\Models\Logement;
+use App\Models\logement;
 
 
 
@@ -156,7 +156,7 @@ class habitSimulerController extends Controller
                     'id_simulationsession' => $session->id,
                 ]);
                 Log::info('Valeur construction_year avant insert:', ['construction_year' => $data['construction_year']]);
-                $logement = Logement::create([
+                $logement = logement::create([
                     'housing_type' => $data['housing_type'],
                     'surface_area' => $data['surface_area'],
                     'housing_value' => $data['housing_value'],
@@ -330,6 +330,7 @@ class habitSimulerController extends Controller
                 ->withErrors(['error' => 'Échec de l\'envoi de l\'e-mail.']);
         }
     }
+
     public function subscribe(Request $request, $devis_id)
     {
         Log::info('subscribe called', ['devis_id' => $devis_id]);
@@ -339,13 +340,14 @@ class habitSimulerController extends Controller
                 ->withErrors(['error' => 'Veuillez sélectionner une formule avant de souscrire.']);
         }
         if (!auth('api')->check()) {
-            return redirect()->route('login.show')->with(['devis_id' => $devis_id, 'type' => 'habitation']);
+            session(['devis_id' => $devis_id, 'type' => 'habitation']);
+            return redirect()->route('login.show');
         }
         $devis = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
         return view('habitation.subscribe', ['devis' => $devis, 'offer' => json_decode($main_devis->OFFRE_CHOISIE, true)]);
     }
 
-public function storeSubscription(Request $request, $devis_id)
+    public function storeSubscription(Request $request, $devis_id)
     {
         Log::info('storeSubscription called', ['devis_id' => $devis_id, 'input' => $request->all()]);
         $client = auth('api')->user();
@@ -363,7 +365,9 @@ public function storeSubscription(Request $request, $devis_id)
         try {
             $main_devis = Devis::findOrFail($devis_id);
             $devis = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
-            $logement = Logement::create([
+
+             //why creating the logemen recors (haven't been created before)
+            $logement = logement::create([
                 'type_logement' => $devis->property_type,
                 'surface' => $devis->surface_area,
                 'adresse' => $devis->location,

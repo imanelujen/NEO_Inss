@@ -136,11 +136,11 @@
                                         <ul class="mt-2 text-sm text-gray-700">
                                             <li>
                                                 @if ($key == 'essentiel')
-                                                    Garanties essentielles, Incendie, Dégâts des eaux, Vol, Catastrophes naturelles
+                                                    Couverture des incendies, explosions, dégâts des eaux, vol, bris de glaces, responsabilité civile, et autres garanties comme frais de déblai, défense juridique, perte d’usage
                                                 @elseif ($key == 'confort')
-                                                    Essentiel + Vol/Incendie renforcé
+                                                    La responsabilité civile, vol, bris de glaces, plus des packs comme neuf, scolaire, accident de travail du personnel, bureau
                                                 @else
-                                                    Essentiel + Tous risques
+                                                    Multirisque Habitation
                                                 @endif
                                             </li>
                                         </ul>

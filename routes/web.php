@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BlogWpController;
 use App\Http\Controllers\SimulationController;
 use App\Http\Controllers\habitSimulerController;
+use App\Http\Controllers\ClientController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -23,15 +24,22 @@ Route::get('/blog', [BlogWpController::class,'index']);
 Route::get('/about', function () {
     return view('about');
 });
+Route::get('/login', [ClientController::class, 'showLoginForm'])->name('login.show');
+Route::post('/login', [ClientController::class, 'login'])->name('login');
+Route::get('/register', [ClientController::class, 'showRegisterForm'])->name('register.show');
+Route::post('/register', [ClientController::class, 'register'])->name('register');
+Route::post('/logout', [ClientController::class, 'logout'])->name('logout');
+
+
 Route::get('/simulate', [SimulationController::class, 'show'])->name('auto.show');
 Route::post('/simulate', [SimulationController::class, 'store'])->name('auto.store');
 Route::get('/simulate/reset', [SimulationController::class, 'reset'])->name('auto.reset');
-Route::post('/simulate/auto/select-offer/{devis_id}', [QuoteController::class, 'selectOffer'])->name('auto.select_offer');
-Route::get('/simulate/auto/download/{devis_id}', [QuoteController::class, 'downloadQuote'])->name('auto.download');
-Route::post('/simulate/auto/email/{devis_id}', [QuoteController::class, 'emailQuote'])->name('auto.email');
-Route::get('/simulate/auto/subscribe/{devis_id}', [QuoteController::class, 'subscribe'])->name('auto.subscribe');
-Route::post('/simulate/auto/subscribe/{devis_id}', [QuoteController::class, 'storeSubscription'])->name('auto.store_subscription');
-Route::get('/simulate/auto/result/{devis_id}', [QuoteController::class, 'showQuote'])->name('auto.result');
+Route::post('/simulate/auto/select-offer/{devis_id}', [SimulationController::class, 'selectOffer'])->name('auto.select_offer');
+Route::get('/simulate/auto/download/{devis_id}', [SimulationController::class, 'downloadQuote'])->name('auto.download');
+Route::post('/simulate/auto/email/{devis_id}', [SimulationController::class, 'emailQuote'])->name('auto.email');
+Route::get('/simulate/auto/subscribe/{devis_id}', [SimulationController::class, 'subscribe'])->name('auto.subscribe');
+Route::post('/simulate/auto/subscribe/{devis_id}', [SimulationController::class, 'storeSubscription'])->name('auto.store_subscription');
+Route::get('/simulate/auto/result/{devis_id}', [SimulationController::class, 'showQuote'])->name('auto.result');
 
 
 
@@ -44,3 +52,11 @@ Route::post('/simulate/habitation/email/{devis_id}', [HabitSimulerController::cl
 Route::get('/simulate/habitation/subscribe/{devis_id}', [HabitSimulerController::class, 'subscribe'])->name('habit.subscribe');
 Route::post('/simulate/habitation/subscribe/{devis_id}', [HabitSimulerController::class, 'storeSubscription'])->name('habit.store_subscription');
 Route::get('/habitation/result/{devis_id}', [habitSimulerController::class, 'showQuote'])->name('habit.result');
+
+
+Route::middleware(['auth.jwt'])->group(function () {
+    Route::get('/habit/simulate/subscribe/{devis_id}', [habitSimulerController::class, 'subscribe'])->name('habit.subscribe');
+    Route::post('/habit/simulate/subscribe/{devis_id}', [habitSimulerController::class, 'storeSubscription'])->name('habit.store_subscription');
+    Route::get('/simulate/auto/subscribe/{devis_id}', [SimulationController::class, 'subscribe'])->name('auto.subscribe');
+    Route::post('/simulate/auto/subscribe/{devis_id}', [SimulationController::class, 'storeSubscription'])->name('auto.store_subscription');
+});

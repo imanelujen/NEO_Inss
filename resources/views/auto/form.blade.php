@@ -4,11 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Devis Assurance Auto - Neo Assurances</title>
-
-
-
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
    <!--@include('blog.navbar')-->
@@ -36,6 +32,7 @@
             </div>
 </div>
         <!--form-->
+        @if ($step == 1 || $step == 2)
         <form method="POST" action="{{ route('auto.store') }}" class="bg-white p-6 rounded-lg shadow-md" x-data="formValidation()">
             @csrf
             <input type="hidden" name="step" value="{{$step}}">
@@ -129,28 +126,97 @@
                 </div>
 
          <!-- Navigation Buttons -->
-@elseif ($step == 3)
-                <div class="text-center">
-                    <h2 class="text-2xl font-bold text-blue-600 mb-4">Votre Devis Assurance Auto</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        @foreach (['basic' => 'Basique', 'standard' => 'Standard', 'premium' => 'Premium'] as $key => $label)
-                            <div class="border rounded-lg p-4 shadow-md {{ $key == 'standard' ? 'border-blue-600' : 'border-gray-300' }}">
-                                <h3 class="text-lg font-semibold mb-2">{{ $label }}</h3>
-                                <p class="text-2xl font-bold text-blue-600">{{ $data['formules_choisis'][$key] }} DH</p>
-                                <p class="text-sm text-gray-600">/an</p>
-                                <ul class="mt-2 text-sm text-gray-700">
-                                    <li>{{ $key == 'basic' ? 'Responsabilité civile' : ($key == 'standard' ? 'RC + Vol/Incendie' : 'RC + Tous risques') }}</li>
-                                </ul>
+             @endif
+          </form>
+        @endif
+              @if ($step == 3 && isset($data['devis_id']))
+                <input type="hidden" name="devis_id" value="{{ $data['devis_id'] }}">
+                 <div class="text-center">
+                    <h2 class="text-2xl font-bold text-blue-600 mb-4">Votre Devis Assurance auto</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <p><strong>Le type de véhicule :</strong> {{ $data['vehicle_type'] }}</p>
+                        <p><strong>La marque :</strong> {{ $data['make'] }} </p>
+                        <p><strong>Le modèle :</strong> {{ $data['model'] }}</p>
+                        <p><strong>Le type de carburant:</strong> {{ $data['fuel_type']}}</p>
+                        <p><strong>La date de mise en circulation est:</strong> {{ $data['registration_date']}}</p>
+                        <p><strong>La puissance fiscale :</strong> {{ $data['tax_horsepower']}}</p>
+                        <p><strong>La valeur du véhicule :</strong> {{ number_format($data['vehicle_value'], 2) }} DH</p>
+                    </div>
+                    @if (isset($data['devis_status']) && $data['devis_status'] == 'BROUILLON')
+                        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                            <h3 class="text-lg font-semibold mb-4">Choisissez votre formule</h3>
+                            <p class="text-gray-500 text-sm mb-2">Form action: {{ route('auto.select_offer', ['devis_id' => $data['devis_id']]) }}</p>
+                        <form id="offer-selection-form" method="POST" action="{{ route('auto.select_offer', ['devis_id' => $data['devis_id']]) }}">
+                            @csrf
+                            <input type="hidden" name="devis_id" value="{{ $data['devis_id'] }}">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                @foreach (['basic' => 'Basic', 'standard' => 'Standard', 'premium' => 'Premium'] as $key => $label)
+                                    <label class="border rounded-lg p-4 cursor-pointer hover:bg-blue-50 {{ $key == 'basic' ? 'border-blue-600' : 'border-gray-300' }}">
+                                        <input type="radio" name="offer" value="{{ $key }}" required class="mr-2" x-model="selectedOffer">
+                                        <span class="text-lg font-semibold">{{ $label }}</span>
+                                        <p class="text-2xl font-bold text-blue-600">{{ number_format($data['formules_choisis'][$key] ?? 0, 2) }} DH/an</p>
+                                        <ul class="mt-2 text-sm text-gray-700">
+                                            <li>
+                                                @if ($key == 'basic')
+                                                    Responsabilité Civile (RC) : la formule obligatoire, couvre uniquement les dommages causés aux tiers. Son tarif est réglementé ; il dépend de l’usage du véhicule
+                                                @elseif ($key == 'standard')
+                                                    la RC + événements catastrophiques + protection juridique + protection familiale
+                                                @else
+                                                    la formule la plus complète
+                                                @endif
+                                            </li>
+                                        </ul>
+                                    </label>
+                                @endforeach
                             </div>
-                        @endforeach
+                            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Confirmer la formule</button>
+                        </form>
                     </div>
-                    <div class="mt-6 flex justify-center">
-                        <a href="{{ route('auto.reset') }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Nouveau Devis</a>
+                @else
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <p><strong>Formule choisie :</strong> {{ ucfirst($data['selected_offer'] ?? 'Aucune') }}</p>
+                        <p><strong>Montant du devis :</strong> {{ number_format($data['montant_base'] ?? 0, 2) }} DH/an</p>
+                        <div class="mt-6 flex justify-center space-x-4">
+                            <a href="{{ route('auto.subscribe', ['devis_id' => $data['devis_id']]) }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Souscrire</a>
+                            <form action="{{ route('auto.email', ['devis_id' => $data['devis_id']]) }}" method="POST" class="inline">
+                                @csrf
+                                <input type="email" name="email" placeholder="Votre e-mail" required class="border rounded p-2 mr-2">
+                                <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Envoyer par e-mail</button>
+                            </form>
+                        </div>
                     </div>
+                @endif
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    @foreach (['basic' => 'Basic', 'standard' => 'Standard', 'premium' => 'premium'] as $key => $label)
+                        <div class="border rounded-lg p-4 shadow-md {{ $key == 'basic' ? 'border-blue-600' : 'border-gray-300' }}">
+                            <h3 class="text-lg font-semibold mb-2">{{ $label }}</h3>
+                            <p class="text-2xl font-bold text-blue-600">{{ number_format($data['formules_choisis'][$key] ?? 0, 2) }} DH</p>
+                            <p class="text-sm text-gray-600">/an</p>
+                            <ul class="mt-2 text-sm text-gray-700">
+                                <li>
+                                    @if ($key == 'basic')
+                                        Responsabilité Civile (RC) : la formule obligatoire, couvre uniquement les dommages causés aux tiers. Son tarif est réglementé ; il dépend de l’usage du véhicule 
+                                    @elseif ($key == 'standard')
+                                        la RC + événements catastrophiques + protection juridique + protection familiale
+                                    @else
+                                        la formule la plus complète
+                                    @endif
+                                </li>
+                            </ul>
+                        </div>
+                    @endforeach
                 </div>
-            @endif
-</form>
-<div class="mt-8">
+                <div class="mt-6 flex justify-center">
+                    <a href="{{ route('auto.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Nouveau Devis</a>
+                </div>
+            </div>
+        @else
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <p>Erreur : Aucun devis trouvé. Veuillez recommencer.</p>
+                <a href="{{ route('auto.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 mt-4 inline-block">Recommencer</a>
+            </div>
+        @endif
+        <div class="mt-8">
             <h2 class="text-xl font-bold text-blue-600 mb-4">Actualités (WordPress)</h2>
             @if (!empty($posts))
                 <ul class="list-disc pl-5">

@@ -63,10 +63,6 @@ return [
     */
 
     'providers' => [
-        'users' => [
-           'driver' => 'eloquent',
-           'model' => App\Models\User::class,
-    ],
         'clients' => [
            'driver' => 'eloquent',
            'model' => App\Models\Client::class,
@@ -88,14 +84,23 @@ return [
     |
     */
 
-    'passwords' => [
+    /*'passwords' => [
         'users' => [
             'provider' => 'users',
             'table' => 'password_resets',
             'expire' => 60,
             'throttle' => 60,
         ],
-    ],
+    ],*/
+    'passwords' => [
+        'clients' => [
+            'provider' => 'clients',
+            'table' => 'password_resets',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+   ],
+
 
     /*
     |--------------------------------------------------------------------------
