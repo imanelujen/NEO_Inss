@@ -38,11 +38,11 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'clients',
+            'provider' => 'users', // change from 'clients' to 'users'
         ],
         'api' => [
             'driver' => 'jwt',
-            'provider' => 'clients',
+            'provider' => 'users', // change from 'clients' to 'users'
         ],
     ],
     /*
@@ -63,11 +63,12 @@ return [
     */
 
     'providers' => [
-        'clients' => [
-           'driver' => 'eloquent',
-           'model' => App\Models\Client::class,
+        'users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\User::class,
+        ],
+        // keep 'clients' if you still need it elsewhere
     ],
-   ],
 
     /*
     |--------------------------------------------------------------------------

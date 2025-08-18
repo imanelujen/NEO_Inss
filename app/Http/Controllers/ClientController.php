@@ -7,7 +7,7 @@
   use Illuminate\Support\Facades\Hash;
   use Illuminate\Contracts\Auth\Authenticatable;
   use App\Models\Devis;
-  
+
 
   class ClientController extends Controller
   {
@@ -60,7 +60,7 @@
         return redirect()->route('habit.simulation.show', ['step' => 1])
             ->with('success', 'Connexion réussie');
     }
-    
+
       public function showRegisterForm()
       {
           Log::info('Client registration form displayed');
@@ -85,7 +85,8 @@
               'email' => $validated['email'],
               'password' => $validated['password'],
               'phone' => $validated['phone'],
-              
+              'date_inscription' => now(),
+
           ]);
 
           $token = JWTAuth::fromUser($client);
@@ -116,4 +117,3 @@
   }
 
 
-   

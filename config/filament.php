@@ -90,11 +90,11 @@ return [
             'login' => \Filament\Http\Livewire\Auth\Login::class,
         ],
         'providers' => [
-        'users' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\User::class, // 👈 make sure it's User not Client
+            'users' => [
+                'driver' => 'eloquent',
+                'model' => App\Models\User::class, // 👈 this is correct
+            ],
         ],
-    ],
     ],
 
     /*
