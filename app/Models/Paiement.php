@@ -13,3 +13,4 @@ class Paiement extends Model
         return $this->hasMany(Contrat::class, 'id_paiement');
     }
 }
+

@@ -339,7 +339,7 @@ class habitSimulerController extends Controller
             return redirect()->route('habit.simulation.show', ['step' => 3])
                 ->withErrors(['error' => 'Veuillez sélectionner une formule avant de souscrire.']);
         }
-        if (!auth('api')->check()) {
+        if (!auth('api_clients')->check()) {
             session(['devis_id' => $devis_id, 'type' => 'habitation']);
             return redirect()->route('login.show');
         }
@@ -350,7 +350,7 @@ class habitSimulerController extends Controller
     public function storeSubscription(Request $request, $devis_id)
     {
         Log::info('storeSubscription called', ['devis_id' => $devis_id, 'input' => $request->all()]);
-        $client = auth('api')->user();
+        $client = auth('api_clients')->user();
         if (!$client) {
             return redirect()->route('login.show')->with(['devis_id' => $devis_id, 'type' => 'habitation']);
         }

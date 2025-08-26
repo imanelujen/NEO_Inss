@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\LogementResource\Pages;
 use App\Filament\Resources\LogementResource\RelationManagers;
-use App\Models\Logement;
+use App\Models\logement;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;

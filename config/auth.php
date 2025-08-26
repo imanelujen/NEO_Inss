@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults
@@ -38,11 +37,19 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users', // change from 'clients' to 'users'
+            'provider' => 'users',
         ],
         'api' => [
-            'driver' => 'jwt',
+            'driver' => 'session',
             'provider' => 'users', // change from 'clients' to 'users'
+        ],
+        'api_clients' => [ // <-- add this new guard
+            'driver' => 'session',
+            'provider' => 'clients',
+        ],
+        'filament' => [
+            'driver' => 'session',
+            'provider' => 'users', // <-- change this from 'clients' to 'users'
         ],
     ],
     /*
@@ -63,11 +70,14 @@ return [
     */
 
     'providers' => [
-        'users' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\User::class,
-        ],
-        // keep 'clients' if you still need it elsewhere
+    'users' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\User::class,
+    ],
+    'clients' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\Client::class,
+    ],
     ],
 
     /*

@@ -23,7 +23,7 @@
                   {{ session('success') }}
               </div>
           @endif
-          <form method="POST" action="{{ route('login') }}" class="bg-white p-6 rounded-lg shadow-md">
+          <form method="POST" action="{{ route('register.show') }}" class="bg-white p-6 rounded-lg shadow-md">
               @csrf
               <div class="mb-4">
                   <label class="block text-gray-700 font-medium mb-2" for="email">E-mail</label>
@@ -43,3 +43,4 @@
       </div>
   </body>
   </html>
+  

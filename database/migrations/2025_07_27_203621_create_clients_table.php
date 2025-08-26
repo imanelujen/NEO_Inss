@@ -15,7 +15,7 @@ class CreateClientsTable extends Migration
             $table->string('prenom');
             $table->string('email')->unique();
             $table->string('phone')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->enum('statut', ['ACTIF', 'INACTIF', 'SUSPENDU'])->default('ACTIF');
             $table->date('date_inscription')->useCurrent();
             $table->timestamps();

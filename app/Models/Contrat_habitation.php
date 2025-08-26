@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Contrat_habitation extends Model
 {
+    protected $table = 'contrat_habitation';
    protected $fillable = ['id_contrat', 'id_logement', 'franchise', 'garanties'];
 
     protected $casts = ['garanties' => 'array'];

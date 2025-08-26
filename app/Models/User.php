@@ -7,8 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Filament\Models\Contracts\FilamentUser;
 
-class User extends Authenticatable
+
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -32,6 +34,12 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+    
+    public function canAccessFilament(): bool
+    {
+        // Adjust to your logic, for now allow all users
+        return true;
+    }
 
     /**
      * The attributes that should be cast.

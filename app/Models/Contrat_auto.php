@@ -7,7 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class Contrat_auto extends Model
 {
-    protected $fillable = ['id_contrat', 'id_vehicule', 'id_conducteur', 'garanties', 'franchise'];
+    protected $table = 'contrat_auto';
+    protected $fillable = [
+        'id_contrat',
+        'id_vehicule',
+        'id_conducteur',
+        'garanties',
+        'carte_grise_path',
+        'permis_path',
+        'cin_recto_path',
+        'cin_verso_path',
+        'franchise',
+    ];
 
     protected $casts = ['garanties' => 'array'];
 

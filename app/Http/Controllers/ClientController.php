@@ -1,119 +1,177 @@
 <?php
-  namespace App\Http\Controllers;
-  use Illuminate\Http\Request;
-  use App\Models\Client;
-  use Illuminate\Support\Facades\Log;
-  use Tymon\JWTAuth\Facades\JWTAuth;
-  use Illuminate\Support\Facades\Hash;
-  use Illuminate\Contracts\Auth\Authenticatable;
-  use App\Models\Devis;
 
+namespace App\Http\Controllers;
 
-  class ClientController extends Controller
-  {
-      public function showLoginForm()
-      {
-          Log::info('Client login form displayed');
-          return view('client.login');
-      }
+use App\Models\Client;
+use App\Mail\ClientRegistered;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Illuminate\Database\QueryException;
+use App\Models\DevisAuto;
+use App\Models\Vehicule;
+use App\Models\Conducteur;
 
- public function login(Request $request)
+class ClientController extends Controller
+{
+    public function showRegisterForm()
     {
-        // 1️⃣ Validate request
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string|min:6',
+        Log::info('Showing registration form', [
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'url' => request()->url(),
+        ]);
+        return view('client.register');
+    }
+
+    public function showLoginForm()
+    {
+        Log::info('Showing login form', [
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'url' => request()->url(),
+        ]);
+        return view('client.login');
+    }
+
+    public function login(Request $request)
+    {
+        Log::info('Client login attempt', [
+            'email' => $request->input('email'),
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'url' => $request->url(),
         ]);
 
-        Log::info('Client login attempt', ['email' => $request->email]);
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
 
-        // 2️⃣ Try to authenticate with JWT
-        $credentials = $request->only('email', 'password');
-        if (!$token = auth('api')->attempt($credentials)) {
-            Log::warning('Login failed: wrong credentials', ['email' => $request->email]);
-            return back()->withErrors(['email' => 'Identifiants incorrects'])->withInput($request->except('password'));
+        if (Auth::guard('api_clients')->attempt($credentials)) {
+            $request->session()->regenerate();
+            session()->save();
+
+            Log::info('Client logged in', [
+                'client_id' => Auth::guard('api_clients')->id(),
+                'session_id' => session()->getId(),
+                'session_data' => session()->all(),
+            ]);
+
+            $intended_devis_id = session('intended_devis_id');
+            if ($intended_devis_id && session('type') === 'auto') {
+                Log::info('Redirecting to auto.documents after login', ['devis_id' => $intended_devis_id]);
+                return redirect()->route('auto.documents', ['devis_id' => $intended_devis_id]);
+            }
+
+            return redirect()->route('auto.show', ['step' => 1])
+                ->with('success', 'Connexion réussie.');
         }
 
-        // 3️⃣ Get authenticated user
-        $client = auth('api')->user();
-        if (!$client) {
-            Log::error('JWT token created but user is null after attempt', ['email' => $request->email]);
-            return back()->withErrors(['error' => 'Impossible de récupérer le client.']);
-        }
-
-        // 4️⃣ Store JWT token in session
-        session(['jwt_token' => $token]);
-
-        Log::info('Client logged in successfully', ['client_id' => $client->id]);
-
-        // 5️⃣ Redirect to subscription if valid devis_id exists in session
-        $devis_id = session('devis_id');
-        $type = session('type');
-        if ($devis_id && Devis::find($devis_id)) {
-            $route = $type === 'auto' ? 'auto.subscribe' : 'habit.subscribe';
-            Log::info('Redirecting to subscription', ['devis_id' => $devis_id, 'type' => $type]);
-            return redirect()->route($route, ['devis_id' => $devis_id]);
-        }
-
-        // 6️⃣ Fallback redirect to simulation
-        Log::info('No valid devis_id in session, redirecting to simulation');
-        return redirect()->route('habit.simulation.show', ['step' => 1])
-            ->with('success', 'Connexion réussie');
+        Log::warning('Client login failed', [
+            'email' => $request->input('email'),
+            'session_id' => session()->getId(),
+        ]);
+        return back()->withErrors(['email' => 'Identifiants incorrects.']);
     }
 
-      public function showRegisterForm()
-      {
-          Log::info('Client registration form displayed');
-          return view('client.register');
-      }
+    public function register(Request $request)
+    {
+        Log::info('Client registration attempt', [
+            'email' => $request->input('email'),
+            'session_id' => session()->getId(),
+            'intended_devis_id' => session('intended_devis_id'),
+            'type' => session('type'),
+            'session_data' => session()->all(),
+            'url' => $request->url(),
+        ]);
 
-      public function register(Request $request)
-      {
-          $validated = $request->validate([
-              'name' => 'required|string|max:255',
-              'prenom' => 'required|string|max:255',
-              'email' => 'required|email|unique:clients,email',
-              'password' => 'required|string|min:8|confirmed',
-              'phone' => 'nullable|string|max:20',
-          ]);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'email' => 'required|email|unique:clients,email',
+            'phone' => 'required|string|regex:/^\+?[1-9]\d{1,14}$/',
+        ]);
 
-          Log::info('Client registration attempt', ['email' => $request->email]);
+        try {
+            $password = Str::random(12);
+            $client = Client::create([
+                'name' => $validated['name'],
+                'prenom' => $validated['prenom'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'password' => bcrypt($password),
+                'statut' => 'ACTIF',
+                'date_inscription' => now()->toDateString(),
+            ]);
 
-          $client = Client::create([
-              'name' => $validated['name'],
-              'prenom' => $validated['prenom'],
-              'email' => $validated['email'],
-              'password' => $validated['password'],
-              'phone' => $validated['phone'],
-              'date_inscription' => now(),
+            Mail::to($client->email)->send(new ClientRegistered($client, $password));
+            Log::info('Email sent with password', ['email' => $client->email]);
 
-          ]);
+            Auth::guard('api_clients')->login($client);
+            session([
+                'auto_data' => [
+                    'intended_devis_id' => session('intended_devis_id'),
+                    'type' => session('type', 'auto'),
+                ],
+            ]);
+            session()->regenerate();
+            session()->save();
 
-          $token = JWTAuth::fromUser($client);
-          session(['jwt_token' => $token]);
-          Log::info('Client registered successfully', ['client_id' => $client->id]);
+            Log::info('Client registered and authenticated', [
+                'client_id' => $client->id,
+                'devis_id' => session('intended_devis_id'),
+                'type' => session('type'),
+                'session_id' => session()->getId(),
+                'session_data' => session()->all(),
+            ]);
 
-           $devis_id = session('devis_id');
-        $type = session('type');
-        if ($devis_id && Devis::find($devis_id)) {
-            $route = $type === 'auto' ? 'auto.subscribe' : 'habit.subscribe';
-            Log::info('Redirecting to subscription', ['devis_id' => $devis_id, 'type' => $type]);
-            return redirect()->route($route, ['devis_id' => $devis_id]);
+            $intended_devis_id = session('intended_devis_id');
+            if ($intended_devis_id && session('type') === 'auto') {
+                Log::info('Redirecting to auto.documents', ['devis_id' => $intended_devis_id]);
+                return redirect()->route('auto.documents', ['devis_id' => $intended_devis_id]);
+            }
+
+            Log::warning('No intended_devis_id or type not auto, redirecting to auto.show', [
+                'intended_devis_id' => $intended_devis_id,
+                'type' => session('type'),
+            ]);
+            return redirect()->route('auto.show', ['step' => 1])
+                ->with('success', 'Inscription réussie. Veuillez vous connecter.');
+        } catch (QueryException $e) {
+            Log::error('Database error during registration: ' . $e->getMessage(), [
+                'sql' => $e->getSql(),
+                'bindings' => $e->getBindings(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                return redirect()->route('register.show')
+                    ->withErrors(['email' => 'Cet email est déjà utilisé.']);
+            }
+            return redirect()->route('register.show')
+                ->withErrors(['error' => 'Erreur de base de données. Veuillez réessayer.']);
+        } catch (\Exception $e) {
+            Log::error('Registration error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->route('register.show')
+                ->withErrors(['error' => 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.']);
         }
-
-        //change this
-        return redirect()->route('habit.simulation.show', ['step' => 1])
-            ->with('success', 'Inscription réussie');
     }
 
-      public function logout(Request $request)
-      {
-          Log::info('Client logout', ['client_id' => auth('api')->id() ?? 'unknown']);
-          JWTAuth::invalidate(JWTAuth::getToken());
-          session()->forget('jwt_token');
-          return redirect()->route('habit.simulation.show', ['step' => 1])
-              ->with('success', 'Déconnexion réussie');
-      }
-  }
+    public function logout(Request $request)
+    {
+        Log::info('Logout attempt', [
+            'client_id' => Auth::guard('api_clients')->id(),
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+        ]);
 
+        Auth::guard('api_clients')->logout();
+        $request->session()->forget(['auto_data']);
+        $request->session()->regenerate();
 
+        Log::info('User logged out', ['session_id' => session()->getId()]);
+        return redirect()->route('auto.show', ['step' => 1]);
+    }
+}

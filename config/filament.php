@@ -285,7 +285,7 @@ return [
     |
     */
 
-    'default_avatar_provider' => \Filament\AvatarProviders\UiAvatarsProvider::class,
+    'default_avatar_provider' => null,
 
     /*
     |--------------------------------------------------------------------------
@@ -326,7 +326,7 @@ return [
 
     'middleware' => [
         'auth' => [
-            Authenticate::class,
+           // Authenticate::class,
         ],
         'base' => [
             EncryptCookies::class,

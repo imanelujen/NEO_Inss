@@ -23,21 +23,39 @@ class ConducteurResource extends Resource
     {
         return $form
             ->schema([
-                //
-            ]);
+                 Forms\Components\TextInput::make('bonus_malus')
+                ->numeric()
+                ->default(1.00)
+                ->step(0.01)
+                ->required(),
+
+            Forms\Components\Textarea::make('historique_accidents')
+                ->label('Historique des accidents')
+                ->rows(4),
+
+            Forms\Components\DatePicker::make('date_obtention_permis')
+                ->label('Date d\'obtention du permis')
+                ->required(),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
-                //
+            Tables\Columns\TextColumn::make('id')->sortable(),
+            Tables\Columns\TextColumn::make('bonus_malus'),
+            Tables\Columns\TextColumn::make('historique_accidents')
+                ->limit(50),
+            Tables\Columns\TextColumn::make('date_obtention_permis')->date(),
+            Tables\Columns\TextColumn::make('created_at')->dateTime(),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\DeleteBulkAction::make(),

@@ -1,26 +1,37 @@
 <?php
+
 namespace App\Http\Controllers;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+
 use App\Models\SimulationSession;
 use App\Models\Conducteur;
 use App\Models\Devis;
 use App\Models\DevisAuto;
 use App\Models\Vehicule;
+use App\Models\Agence;
 use App\Models\Contrat;
-use App\Models\ContratAuto;
+use App\Models\Contrat_auto;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Mail\AutoQuoteMail;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+
 
 class SimulationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth:api_clients')->only(['subscribe', 'showDocuments', 'storeDocuments', 'showPayment', 'storePayment']);
+    }
+
     public function show(Request $request)
     {
         $step = $request->query('step', 1);
         Log::info('Auto simulation show called', ['step' => $step]);
 
-        $data = session('simulation_data', []);
+        $data = session('auto_data', []);
 
         if ($step == 3 && !isset($data['devis_id'])) {
             Log::warning('Attempted to access Step 3 without devis_id', ['session_data' => $data]);
@@ -36,18 +47,14 @@ class SimulationController extends Controller
                     ->withErrors(['error' => 'Devis non trouvé. Veuillez recommencer.']);
             }
             $offer_data = json_decode($devis->OFFRE_CHOISIE, true);
+            $devis_auto = DevisAuto::where('id_devis', $data['devis_id'])->firstOrFail();
+            $calculation_factors = json_decode($devis_auto->calculation_factors, true) ?? [];
             $data['devis_status'] = $devis->status;
             $data['montant_base'] = $devis->montant_base;
             $data['selected_offer'] = $offer_data['offer'] ?? 'none';
-            // Recalculate formules_choisis based on original montant_base (basic)
-            $base_amount = $devis->status == 'BROUILLON' ? $devis->montant_base :
-                $devis->montant_base / ($offer_data['offer'] == 'premium' ? 1.5 :
-                ($offer_data['offer'] == 'standard' ? 1.2 : 1.0));
-            $data['formules_choisis'] = [
-                'basic' => $base_amount,
-                'standard' => $base_amount * 1.2,
-                'premium' => $base_amount * 1.5,
-            ];
+            $data['formules_choisis'] = json_decode($devis_auto->formules_choisis, true);
+            $data['calculation_factors'] = $calculation_factors;
+            session(['auto_data' => $data]);
         }
 
         return view('auto.form', ['step' => $step, 'data' => $data, 'posts' => []]);
@@ -57,8 +64,8 @@ class SimulationController extends Controller
     {
         Log::info('store method called with step: ' . $request->input('step'));
         $step = $request->input('step', 1);
-        $data = session('simulation_data', []);
-        Log::info('Current session data', ['simulation_data' => $data]);
+        $data = session('auto_data', []);
+        Log::info('Current session data', ['auto_data' => $data]);
 
         try {
             if ($step == 1) {
@@ -84,8 +91,8 @@ class SimulationController extends Controller
                 ]);
                 Log::info('Step 1 validated', $validated);
                 $data = array_merge($data, $validated);
-                $request->session()->put('simulation_data', $data);
-                Log::info('Session data stored', ['simulation_data' => $data]);
+                session(['auto_data' => $data, 'type' => 'auto']);
+                Log::info('Session data stored', ['auto_data' => $data]);
                 return redirect()->route('auto.show', ['step' => 2]);
             } elseif ($step == 2) {
                 $validated = $request->validate([
@@ -101,10 +108,17 @@ class SimulationController extends Controller
                 ]);
                 Log::info('Step 2 validated', $validated);
                 $data = array_merge($data, $validated);
-                $years_driving = now()->diffInYears(\Carbon\Carbon::parse($data['date_obtention_permis']));
-                $base_rate = 500;
-                $vehicle_value_factor = $data['vehicle_value'] / 10000;
-                $tax_horsepower_factor = $data['tax_horsepower'] * 10;
+                $years_driving = now()->diffInYears(Carbon::parse($data['date_obtention_permis']));
+
+                // Calculate the base rate and factors
+                $base_rate = 1840;
+                $vehicle_value_factor = $data['vehicle_value'] / 1000;
+                $tax_horsepower = $data['tax_horsepower'];
+                $tax_horsepower_factor = $tax_horsepower <= 5 ? $tax_horsepower * 1 :
+                    ($tax_horsepower <= 7 ? $tax_horsepower * 1.3 :
+                    ($tax_horsepower <= 10 ? $tax_horsepower * 1.7 :
+                    ($tax_horsepower <= 14 ? $tax_horsepower * 2.2 : $tax_horsepower * 3)));
+                Log::info('Tax horsepower factor calculated', ['tax_horsepower_factor' => $tax_horsepower_factor]);
                 $vehicle_type_factor = match ($data['vehicle_type']) {
                     'sedan' => 1.0,
                     'suv' => 1.2,
@@ -112,23 +126,70 @@ class SimulationController extends Controller
                     'motorcycle' => 1.5,
                 };
                 $fuel_factor = match ($data['fuel_type']) {
-                    'ESSENCE' => 1.1,
+                    'ESSENCE' => 1.0,
                     'DIESEL' => 1.2,
                     'ELECTRIQUE' => 0.9,
                     'HYBRIDE' => 1.0,
                 };
                 $age_factor = $years_driving < 2 ? 1.4 : ($years_driving < 5 ? 1.2 : 1.0);
-                $registration_age = now()->diffInYears(\Carbon\Carbon::parse($data['registration_date']));
+                $registration_age = now()->diffInYears(Carbon::parse($data['registration_date']));
                 $registration_factor = $registration_age > 10 ? 1.3 : ($registration_age > 5 ? 1.1 : 1.0);
                 $bonus_malus = $data['bonus_malus'];
+
+                // Optional coverages
+                $dommage_collision_factor = $vehicle_value_factor * 30;
+                $incendie_factor = $vehicle_value_factor * 5;
+                $vol_factor = $vehicle_value_factor * 4;
+                $bris_de_glace_factor = 300;
+                $assistance_factor = 400;
+                $protection_juridique_factor = 250;
+
+                // Calculate quotes
+                $basic = round($base_rate + ($fuel_factor * $tax_horsepower_factor), 2);
+                $standard = round(
+                    $basic
+                    + $bris_de_glace_factor
+                    + (0.2 * $vehicle_value_factor)
+                    + $incendie_factor
+                    + $vol_factor,
+                    2
+                );
+                $premium = round(
+                    $standard
+                    + $assistance_factor
+                    + $protection_juridique_factor
+                    + (0.5 * $dommage_collision_factor),
+                    2
+                );
+
                 $formules_choisis = [
-                    'basic' => round($base_rate  * $tax_horsepower_factor, 2),
-                    'standard' => round($base_rate * 1.2 * $vehicle_value_factor * $vehicle_type_factor * $fuel_factor * $age_factor * $registration_factor * $bonus_malus, 2),
-                    'premium' => round($base_rate * 1.5 * $vehicle_value_factor * $vehicle_type_factor * $fuel_factor * $age_factor * $registration_factor * $bonus_malus, 2),
+                    'basic' => $basic,
+                    'standard' => $standard,
+                    'premium' => $premium,
                 ];
+
+                $calculation_factors = [
+                    'base_rate' => $base_rate,
+                    'tax_horsepower_factor' => $tax_horsepower_factor,
+                    'vehicle_value_factor' => $vehicle_value_factor,
+                    'vehicle_type_factor' => $vehicle_type_factor,
+                    'fuel_factor' => $fuel_factor,
+                    'age_factor' => $age_factor,
+                    'registration_factor' => $registration_factor,
+                    'bonus_malus' => $bonus_malus,
+                    'dommage_collision_factor' => $dommage_collision_factor,
+                    'incendie_factor' => $incendie_factor,
+                    'vol_factor' => $vol_factor,
+                    'bris_de_glace_factor' => $bris_de_glace_factor,
+                    'assistance_factor' => $assistance_factor,
+                    'protection_juridique_factor' => $protection_juridique_factor,
+                ];
+
                 $session = SimulationSession::create([
                     'date_debut' => now(),
                     'donnees_temporaires' => json_encode($data),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
                 $devis = Devis::create([
                     'date_creation' => now(),
@@ -158,17 +219,18 @@ class SimulationController extends Controller
                     'id_vehicule' => $vehicule->id,
                     'id_conducteur' => $conducteur->id,
                     'formules_choisis' => json_encode($formules_choisis),
+                    'calculation_factors' => json_encode($calculation_factors),
                 ]);
                 $data['devis_id'] = $devis->id;
+                session(['auto_data' => $data, 'intended_devis_id' => $devis->id, 'type' => 'auto']);
                 Log::info('Step 2 processed', [
                     'session_id' => $session->id,
                     'devis_id' => $devis->id,
                     'vehicule_id' => $vehicule->id,
                     'conducteur_id' => $conducteur->id,
-                    'formules_choisis' => $formules_choisis
+                    'formules_choisis' => $formules_choisis,
+                    'calculation_factors' => $calculation_factors,
                 ]);
-                $request->session()->put('simulation_data', $data);
-                Log::info('Redirecting to Step 3', ['simulation_data' => $data]);
                 return redirect()->route('auto.show', ['step' => 3]);
             }
             Log::warning('Invalid step', ['step' => $step]);
@@ -182,7 +244,7 @@ class SimulationController extends Controller
 
     public function reset(Request $request)
     {
-        $request->session()->forget('simulation_data');
+        session()->forget(['auto_data', 'intended_devis_id', 'type', 'jwt_token']);
         Log::info('Session reset');
         return redirect()->route('auto.show', ['step' => 1]);
     }
@@ -193,9 +255,9 @@ class SimulationController extends Controller
         $devis = Devis::findOrFail($devis_id);
         $devis_auto = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
         $offer_data = json_decode($devis->OFFRE_CHOISIE, true);
-        $data = session('simulation_data', []);
+        $data = session('auto_data', []);
+        $calculation_factors = json_decode($devis_auto->calculation_factors, true) ?? [];
 
-        // Recalculate formules_choisis
         $base_amount = $devis->status == 'BROUILLON' ? $devis->montant_base :
             $devis->montant_base / ($offer_data['offer'] == 'premium' ? 1.5 :
             ($offer_data['offer'] == 'standard' ? 1.2 : 1.0));
@@ -213,9 +275,37 @@ class SimulationController extends Controller
                 'montant_base' => $devis->montant_base,
                 'selected_offer' => $offer_data['offer'] ?? 'none',
                 'formules_choisis' => $formules_choisis,
+                'calculation_factors' => $calculation_factors,
             ]),
             'posts' => [],
         ]);
+    }
+
+    public function showResult($devis_id)
+    {
+        $devis = Devis::findOrFail($devis_id);
+        $devis_auto = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
+        $vehicule = Vehicule::findOrFail($devis_auto->id_vehicule);
+        $conducteur = Conducteur::findOrFail($devis_auto->id_conducteur);
+        $data = session('auto_data', []);
+        $data['devis_id'] = $devis_id;
+        $data['vehicle_type'] = $vehicule->vehicle_type;
+        $data['make'] = $vehicule->make;
+        $data['model'] = $vehicule->model;
+        $data['fuel_type'] = $vehicule->fuel_type;
+        $data['tax_horsepower'] = $vehicule->tax_horsepower;
+        $data['vehicle_value'] = $vehicule->vehicle_value;
+        $data['registration_date'] = $vehicule->registration_date;
+        $data['date_obtention_permis'] = $conducteur->date_obtention_permis;
+        $data['bonus_malus'] = $conducteur->bonus_malus;
+        $data['selected_offer'] = $devis->OFFRE_CHOISIE ? json_decode($devis->OFFRE_CHOISIE, true)['offer'] : null;
+        $data['montant_base'] = $devis->montant_base;
+        $data['devis_status'] = $devis->status;
+        $data['calculation_factors'] = json_decode($devis_auto->calculation_factors, true);
+        $data['formules_choisis'] = json_decode($devis_auto->formules_choisis, true);
+        session(['auto_data' => $data, 'intended_devis_id' => $devis_id, 'type' => 'auto']);
+
+        return view('auto.form', compact('data', 'devis_id'));
     }
 
     public function selectOffer(Request $request, $devis_id)
@@ -234,29 +324,15 @@ class SimulationController extends Controller
 
         try {
             $devis = Devis::findOrFail($devis_id);
-            $offer_factors = [
-                'basic' => 1.0,
-                'standard' => 1.2,
-                'premium' => 1.5,
-            ];
-            // Base amount is the original montant_base (basic)
-            $base_amount = $devis->montant_base;
-            if ($devis->status != 'BROUILLON') {
-                $offer_data = json_decode($devis->OFFRE_CHOISIE, true);
-                $base_amount = $devis->montant_base / ($offer_data['offer'] == 'premium' ? 1.5 : ($offer_data['offer'] == 'standard' ? 1.2 : 1.0));
-            }
-            $montant_base = $base_amount * $offer_factors[$validated['offer']];
+            $devis_auto = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
+            $formules_choisis = json_decode($devis_auto->formules_choisis, true);
+            $montant_base = $formules_choisis[$validated['offer']];
+
             $devis->update([
                 'OFFRE_CHOISIE' => json_encode(['offer' => $validated['offer']]),
                 'montant_base' => $montant_base,
                 'status' => 'FINALISE',
             ]);
-            $devis_auto = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
-            $devis_auto->update(['formules_choisis' => json_encode([
-                'basic' => $base_amount,
-                'standard' => $base_amount * 1.2,
-                'premium' => $base_amount * 1.5,
-            ])]);
 
             Log::info('Offer selected', [
                 'devis_id' => $devis_id,
@@ -310,68 +386,249 @@ class SimulationController extends Controller
         }
     }
 
-    public function subscribe(Request $request, $devis_id)
-    {
-        Log::info('Auto subscribe called', ['devis_id' => $devis_id]);
-        $main_devis = Devis::findOrFail($devis_id);
-        if ($main_devis->status !== 'FINALISE') {
-            return redirect()->route('auto.show', ['step' => 3])
-                ->withErrors(['error' => 'Veuillez sélectionner une formule avant de souscrire.']);
-        }
-        if (!auth('api')->check()) {
-            session(['devis_id' => $devis_id, 'type' => 'auto']);
-            Log::info('Redirecting to login for auto subscription', ['devis_id' => $devis_id]);
-            return redirect()->route('login.show');
-        }
-        $devis = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
-        return view('auto.subscribe', ['devis' => $devis, 'offer' => json_decode($main_devis->OFFRE_CHOISIE, true)]);
-    }
-
-    public function storeSubscription(Request $request, $devis_id)
-    {
-        Log::info('storeSubscription called', ['devis_id' => $devis_id, 'input' => $request->all()]);
-        $client = auth('api')->user();
-        if (!$client) {
-            session(['devis_id' => $devis_id, 'type' => 'auto']);
-            return redirect()->route('login.show');
-        }
-
-        $validated = $request->validate([
-            'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
-            'garanties' => 'required|array',
-            'franchise' => 'required|numeric|min:0',
+        public function subscribe($devis_id)
+        {
+        Log::info('subscribe called', [
+        'devis_id' => $devis_id,
+        'jwt_token' => session('jwt_token'),
+        'auth_check' => Auth::guard('api_clients')->check(),
+        'client_id' => Auth::guard('api_clients')->id(),
+        'session_id' => session()->getId(),
+        'intended_devis_id' => session('intended_devis_id'),
+        'type' => session('type'),
         ]);
 
-        try {
-            $main_devis = Devis::findOrFail($devis_id);
-            $devis = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
-            $contrat = Contrat::create([
-                'type_contrat' => 'AUTO',
-                'id_client' => $client->id,
-                'id_devis' => $devis->id_devis,
-                'id_agent' => 1, // Default agent; adjust as needed
-                'start_date' => now()->toDateString(),
+        if (!Auth::guard('api_clients')->check()) {
+        session(['intended_devis_id' => $devis_id, 'type' => 'auto']);
+        Log::info('User not authenticated, redirecting to register', ['devis_id' => $devis_id]);
+        return redirect()->route('register.show');
+        }
+
+        Log::info('User authenticated, redirecting to documents', [
+        'devis_id' => $devis_id,
+        'client_id' => Auth::guard('api_clients')->id(),
+         ]);
+       return redirect()->route('auto.documents', ['devis_id' => $devis_id]);
+          }
+
+     public function showDocuments($devis_id)
+    {
+        Log::info('Showing documents page', [
+            'devis_id' => $devis_id,
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'client_id' => Auth::guard('api_clients')->id(),
+        ]);
+
+        $devis = Devis::findOrFail($devis_id);
+        $agences = Agence::all();
+        $data = session('auto_data', []);
+        $data['devis_id'] = $devis_id;
+        session(['auto_data' => $data, 'intended_devis_id' => $devis_id, 'type' => 'auto']);
+
+        Log::info('Showing documents page', [
+            'devis_id' => $devis_id,
+            'agences_count' => $agences->count(),
+            'client_id' => Auth::guard('api_clients')->id(),
+            'jwt_token' => session('jwt_token'),
+        ]);
+        return view('auto.documents', compact('devis_id', 'agences', 'data'));
+    }
+
+    public function storeDocuments(Request $request, $devis_id)
+    {
+        Log::info('Storing documents', [
+            'devis_id' => $devis_id,
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'client_id' => Auth::guard('api_clients')->id(),
+        ]);
+
+        $validated = $request->validate([
+            'carte_grise' => 'required|file|mimes:jpg,png|max:2048',
+            'permis' => 'required|file|mimes:jpg,png|max:2048',
+            'cin_recto' => 'required|file|mimes:jpg,png|max:2048',
+            'cin_verso' => 'required|file|mimes:jpg,png|max:2048',
+            'agence_id' => 'required|exists:agences,id',
+        ]);
+
+        $client = Auth::guard('api_clients')->user();
+        $devis = Devis::findOrFail($devis_id);
+        $devisAuto = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
+
+        $vehicule = Vehicule::findOrFail($devisAuto->id_vehicule);
+        $conducteur = Conducteur::findOrFail($devisAuto->id_conducteur);
+
+        // Store files in storage/app/public/documents/{client_id}
+        $filePaths = [];
+        foreach (['carte_grise', 'permis', 'cin_recto', 'cin_verso'] as $fileType) {
+            $file = $request->file($fileType);
+            $path = $file->storeAs(
+                "documents/{$client->id}",
+                "{$fileType}_{$devis_id}." . $file->getClientOriginalExtension(),
+                'public'
+            );
+            $filePaths[$fileType] = $path;
+            Log::info('File stored', ['type' => $fileType, 'path' => $path]);
+        }
+
+        // Create or update contract
+         $contrat = Contrat::updateOrCreate(
+            ['id_devis' => $devis_id, 'id_client' => $client->id],
+            [
+                'id_agent' => $validated['agence_id'],
+                'start_date' => now()->addDay()->toDateString(),
                 'end_date' => now()->addYear()->toDateString(),
-                'prime' => $main_devis->montant_base,
-                'statut' => 'ACTIF',
+                'prime' => $devis->montant_base,
+                'status' => 'PENDING',
+            ]
+        );
+
+        Log::info('Contract created/updated', [
+            'contrat_id' => $contrat->id,
+            'devis_id' => $devis_id,
+            'client_id' => $client->id,
+            'agence_id' => $validated['agence_id'],
+        ]);
+        
+
+          $contratAuto = Contrat_auto::updateOrCreate(
+            ['id_contrat' => $contrat->id],
+            [
+                'id_vehicule' => $vehicule->id,
+                'id_conducteur' => $conducteur->id,
+                'garanties' => json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'basic' ? json_encode(['RC']) : 
+                              (json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'standard' ? json_encode(['RC', 'BRIS DE GLACE', 'INCENDIE', 'VOL']) : 
+                              json_encode(['RC', 'BRIS DE GLACE', 'INCENDIE', 'VOL', 'ASSISTANCE', 'PROTECTION JURIDIQUE'])),
+                'carte_grise_path' => $filePaths['carte_grise'],
+                'permis_path' => $filePaths['permis'],
+                'cin_recto_path' => $filePaths['cin_recto'],
+                'cin_verso_path' => $filePaths['cin_verso'],
+                'franchise' => 200.00,
+            ]
+        );
+
+        Log::info('Contract created/updated', [
+            'contrat_id' => $contrat->id,
+            'contrat_auto_id' => $contratAuto->id,
+            'vehicule_id' => $vehicule->id,
+            'conducteur_id' => $conducteur->id,
+            'devis_id' => $devis_id,
+            'client_id' => $client->id,
+            'agence_id' => $validated['agence_id'],
+        ]);
+
+        return redirect()->route('auto.payment', ['devis_id' => $devis_id])
+            ->with('success', 'Documents envoyés avec succès.');
+    }
+
+    public function showPayment(Request $request, $devis_id)
+    {
+        Log::info('Showing payment form', [
+            'devis_id' => $devis_id,
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'client_id' => Auth::guard('api_clients')->id(),
+        ]);
+
+        $devis = Devis::findOrFail($devis_id);
+        $contrat = Contrat::where('id_devis', $devis_id)
+            ->where('id_client', Auth::guard('api_clients')->id())
+            ->firstOrFail();
+        $contratAuto = $contrat->contratAuto;
+//added for garanties display
+        $garanties = $contratAuto && $contratAuto->garanties
+    ? (is_array($contratAuto->garanties) ? $contratAuto->garanties : json_decode($contratAuto->garanties, true))
+    : [];
+
+        $paymentDetails = [
+            'start_date' => $contrat->start_date,
+            'amount' => $devis->montant_base - 100,
+            'garanties' => $garanties,
+        ];
+
+        return view('auto.payment', [
+            'paymentDetails' => $paymentDetails,
+            'devis_id' => $devis_id,
+        ]);
+    }
+
+
+public function storePayment(Request $request, $devis_id)
+    {
+        Log::info('Processing payment', [
+            'devis_id' => $devis_id,
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'client_id' => Auth::guard('api_clients')->id(),
+        ]);
+
+        $validated = $request->validate([
+            'payment_method' => 'required|string',
+        ]);
+
+        $devis = Devis::findOrFail($devis_id);
+        $contrat = Contrat::where('id_devis', $devis_id)
+            ->where('id_client', Auth::guard('api_clients')->id())
+            ->firstOrFail();
+
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+
+            // Create PaymentIntent
+            $paymentIntent = PaymentIntent::create([
+                'amount' => ($devis->montant_base - 100) * 100, // Convert MAD to cents
+                'currency' => 'mad',
+                'payment_method' => $validated['payment_method'],
+                'confirmation_method' => 'manual',
+                'confirm' => true,
+                'description' => "Paiement pour contrat auto #{$contrat->id}, devis #{$devis_id}",
+                'metadata' => [
+                    'client_id' => Auth::guard('api_clients')->id(),
+                    'devis_id' => $devis_id,
+                    'contrat_id' => $contrat->id,
+                ],
             ]);
 
-            ContratAuto::create([
-                'id_contrat' => $contrat->id,
-                'id_vehicule' => $devis->id_vehicule,
-                'id_conducteur' => $devis->id_conducteur,
-                'franchise' => $validated['franchise'],
-                'garanties' => json_encode($validated['garanties']),
+            // Create paiement record
+            $paiement = Paiement::create([
+                'amount' => $devis->montant_base - 100,
+                'payment_frequency' => 'manual',
+                'status' => $paymentIntent->status === 'succeeded' ? 'completed' : 'pending',
+                'payment_method' => $paymentIntent->payment_method,
+                'payment_date' => now(),
             ]);
 
-            $main_devis->update(['status' => 'ACCEPTE']);
-            return redirect()->route('auto.result', ['devis_id' => $devis_id])
-                ->with('success', 'Souscription effectuée avec succès.');
-        } catch (\Exception $e) {
-            Log::error('Subscription error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return redirect()->route('auto.subscribe', ['devis_id' => $devis_id])
-                ->withErrors(['error' => 'Échec de la souscription.']);
+            if ($paymentIntent->status === 'succeeded') {
+                $contrat->update(['status' => 'ACTIVE']);
+                Log::info('Payment processed successfully', [
+                    'contrat_id' => $contrat->id,
+                    'devis_id' => $devis_id,
+                    'paiement_id' => $paiement->id,
+                    'payment_intent_id' => $paymentIntent->id,
+                ]);
+
+                return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                    ->with('success', 'Paiement effectué avec succès.');
+            } else {
+                Log::warning('PaymentIntent not succeeded', [
+                    'contrat_id' => $contrat->id,
+                    'devis_id' => $devis_id,
+                    'paiement_id' => $paiement->id,
+                    'payment_intent_status' => $paymentIntent->status,
+                ]);
+                return redirect()->route('auto.payment', ['devis_id' => $devis_id])
+                    ->with('error', 'Le paiement n\'a pas pu être finalisé. Veuillez réessayer.');
+            }
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            Log::error('Stripe payment error: ' . $e->getMessage(), [
+                'contrat_id' => $contrat->id,
+                'devis_id' => $devis_id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('auto.payment', ['devis_id' => $devis_id])
+                ->with('error', 'Erreur lors du paiement : ' . $e->getMessage());
         }
     }
 }
+?>
