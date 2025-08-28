@@ -41,12 +41,11 @@ class habitSimulerController extends Controller
             $base_amount = $devis->status == 'BROUILLON' ? $devis->montant_base :
             $devis->montant_base / ($offer_data['offer'] == 'excellence' ? 1.5 :
             ($offer_data['offer'] == 'confort' ? 1.2 : 1.0));
-            $data['formules_choisis'] = [
-                'essentiel' => $base_amount,
-                'confort' => $base_amount * 1.2,
-                'excellence' => $base_amount * 1.5,
-            ];
+            $data['formules_choisis'] = json_decode($devis_auto->formules_choisis, true);
+            $data['calculation_factors'] = $calculation_factors;
+            session(['habit_data' => $data]);
         }
+    
 
         return view('habitation.habitform', ['step' => $step, 'data' => $data, 'posts' => []]);
     }
@@ -123,25 +122,58 @@ class habitSimulerController extends Controller
                     'APPARTEMENT' => 1.0,
                     'MAISON' => 1.2,
                     'PAVILLON' => 1.3,
-                    'STUDIO' => 1.5,
-                    'LOFT' => 1.4,
-                    'VILLA' => 1.6,
+                    'STUDIO' => 0.9,
+                    'LOFT' => 0.9,
+                    'VILLA' => 1.5,
                 };
                 $occupation_factor = match ($data['occupancy_status']) {
-                    'Locataire' => 1.1,
+                    'Locataire' => 1.0,
                     'Propriétaire occupant' => 1.2,
-                    'Propriétaire non-occupant' => 0.9,
+                    'Propriétaire non-occupant' => 1.1,
                 };
-                $age_factor = $years_living < 2 ? 1.4 : ($years_living < 5 ? 1.2 : 1.0);
+                $age_factor = $years_living < 5 ? 0.9 : ($years_living < 15 ? 1 : 1.3);
+                $housing_value = $data['housing_value']/10000;
 
                 $registration_factor = 1.0; // Assuming no additional registration factor for now
-                $montant_base = round($base_rate + $house_type_factor + $home_value_factor * $occupation_factor * $age_factor * $registration_factor, 2);
+                $degat_eau_factor=50;
+                $incendie_factor=70.0;
+                $protection_juridique_factor=30.0;
+                $assistance_factor=50;
 
+            $essentiel = round($base_rate + ($house_type_factor * $occupation_factor*$age_factor), 2);
+                $confort = round(
+                    $essentiel
+                    + $housing_value
+                    + $degat_eau_factor
+                    + $incendie_factor
+                    + $protection_juridique_factor,
+                    2
+                );
+                $excellence = round(
+                    $standard
+                    + $assistance_factor
+                    + $protection_juridique_factor
+                    + (0.5 ),
+                    2
+                );
                 $formules_choisis = [
-                    'essentiel' => $montant_base,
-                    'confort' => $montant_base * 1.2,
-                    'excellence' => $montant_base * 1.5,
+                    'essentiel' => $essentiel,
+                    'confort' => $confort,
+                    'excellence' => $excellence,
                 ];
+                $calculation_factors = [
+                    'base_rate' => $base_rate,
+                    'home_value_factor' => $home_value_factor,
+                    'house_type_factor' => $house_type_factor,
+                    'occupation_factor' => $occupation_factor,
+                    'age_factor' => $age_factor,
+                    'registration_factor' => $registration_factor,
+                    'degat_eau_factor' => $degat_eau_factor,
+                    'incendie_factor' => $incendie_factor,
+                    'protection_juridique_factor' => $protection_juridique_factor,
+                    'assistance_factor' => $assistance_factor,
+                ];
+
                 $session = SimulationSession::create([
                     'date_debut' => now(),
                     'donnees_temporaires' => json_encode([$data]),
@@ -149,7 +181,7 @@ class habitSimulerController extends Controller
                 $devis = Devis::create([
                     'date_creation' => now(),
                     'date_expiration' => now()->addDays(30),
-                    'montant_base' => $montant_base,
+                    'montant_base' => $formules_choisis['essentiel'],
                     'OFFRE_CHOISIE' => json_encode(['offer' => 'none']),
                     'status' => 'BROUILLON',
                     'typedevis' => 'HABITATION',
@@ -175,7 +207,8 @@ class habitSimulerController extends Controller
                     'session_id' => $session->id,
                     'devis_id' => $devis->id,
                     'logement_id' => $logement->id,
-                    'formules_choisis' => $formules_choisis
+                    'formules_choisis' => json_encode($formules_choisis),
+                    'calculation_factors' => json_encode($calculation_factors),
                 ]);
                 $data['formules_choisis'] = $formules_choisis;
                 //$request->session()->put('habitsimulation_data', $data);
@@ -239,6 +272,7 @@ class habitSimulerController extends Controller
                 'montant_base' => $devis->montant_base,
                 'selected_offer' => $offer_data['offer'] ?? 'none',
                 'formules_choisis' => $formules_choisis,
+                'calculation_factors'=>$calculation_factors,
             ]),
             'posts' => [],
         ]);
@@ -344,9 +378,146 @@ class habitSimulerController extends Controller
             return redirect()->route('login.show');
         }
         $devis = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
-        return view('habitation.subscribe', ['devis' => $devis, 'offer' => json_decode($main_devis->OFFRE_CHOISIE, true)]);
+        return view('habitation.documents', ['devis' => $devis, 'offer' => json_decode($main_devis->OFFRE_CHOISIE, true)]);
     }
 
+         public function showDocuments($devis_id)
+    {
+        Log::info('Showing documents page', [
+            'devis_id' => $devis_id,
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+           // 'client_id' => Auth::guard('api_clients')->id(),
+        ]);
+
+        $devis = Devis::findOrFail($devis_id);
+        $agences = Agence::all();
+        $data = session('auto_data', []);
+        $data['devis_id'] = $devis_id;
+        session(['auto_data' => $data, 'intended_devis_id' => $devis_id, 'type' => 'auto']);
+
+        Log::info('Showing documents page', [
+            'devis_id' => $devis_id,
+            'agences_count' => $agences->count(),
+            'client_id' => Auth::guard('api_clients')->id(),
+            'jwt_token' => session('jwt_token'),
+        ]);
+        return view('habitation.documents', compact('devis_id', 'agences', 'data'));
+    }
+
+        public function storeDocuments(Request $request, $devis_id)
+    {
+        Log::info('Storing documents', [
+            'devis_id' => $devis_id,
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'client_id' => Auth::guard('api_clients')->id(),
+        ]);
+
+        $validated = $request->validate([
+            'titre_foncier' => 'required|file|mimes:jpg,png|max:2048',
+            'cin_recto' => 'required|file|mimes:jpg,png|max:2048',
+            'cin_verso' => 'required|file|mimes:jpg,png|max:2048',
+            'agence_id' => 'required|exists:agences,id',
+        ]);
+
+        $client = Auth::guard('api_clients')->user();
+        $devis = Devis::findOrFail($devis_id);
+        $devisAuto = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
+
+        $logement = logement::findOrFail($devisAuto->id_logement);
+
+        // Store files in storage/app/public/documents/{client_id}
+        $filePaths = [];
+        foreach (['titre_foncier', 'cin_recto', 'cin_verso'] as $fileType) {
+            $file = $request->file($fileType);
+            $path = $file->storeAs(
+                "documents/{$client->id}",
+                "{$fileType}_{$devis_id}." . $file->getClientOriginalExtension(),
+                'public'
+            );
+            $filePaths[$fileType] = $path;
+            Log::info('File stored', ['type' => $fileType, 'path' => $path]);
+        }
+
+        // Create or update contract
+         $contrat = Contrat::updateOrCreate(
+            ['id_devis' => $devis_id, 'id_client' => $client->id],
+            [
+                'id_agent' => $validated['agence_id'],
+                'start_date' => now()->addDay()->toDateString(),
+                'end_date' => now()->addYear()->toDateString(),
+                'prime' => $devis->montant_base,
+                'status' => 'PENDING',
+            ]
+        );
+
+        Log::info('Contract created/updated', [
+            'contrat_id' => $contrat->id,
+            'devis_id' => $devis_id,
+            'client_id' => $client->id,
+            'agence_id' => $validated['agence_id'],
+        ]);
+
+
+          $contratHabitation = contrat_habitation::updateOrCreate(
+            ['id_contrat' => $contrat->id],
+            [
+                'id_logement' => $logement->id,
+                'garanties' => json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'essesnce' ? json_encode(['RC']) :
+                              (json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'confort' ? json_encode(['RC', 'Degâts des eaux', 'INCENDIE']) :
+                              json_encode(['RC', 'Degâts des eaux', 'INCENDIE','BRIS DE GLACE', 'VOL', 'CATASTROPHE NATURELLE','ASSISTANCE HABITATION'])),
+                'titre_foncier_path' => $filePaths['titre_foncier'],
+                'cin_recto_path' => $filePaths['cin_recto'],
+                'cin_verso_path' => $filePaths['cin_verso'],
+                'franchise' => 200.00,
+            ]
+        );
+
+        Log::info('Contract created/updated', [
+            'contrat_id' => $contrat->id,
+            'contrat_auto_id' => $contratHabitation->id,
+            'vehicule_id' => $vehicule->id,
+            'conducteur_id' => $conducteur->id,
+            'devis_id' => $devis_id,
+            'client_id' => $client->id,
+            'agence_id' => $validated['agence_id'],
+        ]);
+
+        return redirect()->route('habitation.checkout', ['devis_id' => $devis_id])
+            ->with('success', 'Documents envoyés avec succès.');
+    }
+     
+        public function showcheckout(Request $request, $devis_id)
+    {
+        Log::info('Showing checkout habitation form', [
+            'devis_id' => $devis_id,
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'client_id' => Auth::guard('api_clients')->id(),
+        ]);
+
+        $devis = Devis::findOrFail($devis_id);
+        $contrat = Contrat::where('id_devis', $devis_id)
+            ->where('id_client', Auth::guard('api_clients')->id())
+            ->firstOrFail();
+        $contratHabitation = $contrat->contratHabitation;
+//added for garanties display
+        $garanties = $contratHabitation && $contratHabitation->garanties
+    ? (is_array($contratHabitation->garanties) ? $contratHabitation->garanties : json_decode($contratHabitation->garanties, true))
+    : [];
+
+        $paymentDetails = [
+            'start_date' => $contrat->start_date,
+            'amount' => $devis->montant_base - 100,
+            'garanties' => $garanties,
+        ];
+
+        return view('habitation.checkout', [
+            'paymentDetails' => $paymentDetails,
+            'devis_id' => $devis_id,
+        ]);
+    }
     public function storeSubscription(Request $request, $devis_id)
     {
         Log::info('storeSubscription called', ['devis_id' => $devis_id, 'input' => $request->all()]);
@@ -403,5 +574,6 @@ class habitSimulerController extends Controller
                 ->withErrors(['error' => 'Échec de la souscription.']);
         }
     }
+
 
 }
