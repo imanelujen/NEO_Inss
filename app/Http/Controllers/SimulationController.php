@@ -17,6 +17,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
 
 
 class SimulationController extends Controller
@@ -490,15 +492,15 @@ class SimulationController extends Controller
             'client_id' => $client->id,
             'agence_id' => $validated['agence_id'],
         ]);
-        
+
 
           $contratAuto = Contrat_auto::updateOrCreate(
             ['id_contrat' => $contrat->id],
             [
                 'id_vehicule' => $vehicule->id,
                 'id_conducteur' => $conducteur->id,
-                'garanties' => json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'basic' ? json_encode(['RC']) : 
-                              (json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'standard' ? json_encode(['RC', 'BRIS DE GLACE', 'INCENDIE', 'VOL']) : 
+                'garanties' => json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'basic' ? json_encode(['RC']) :
+                              (json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'standard' ? json_encode(['RC', 'BRIS DE GLACE', 'INCENDIE', 'VOL']) :
                               json_encode(['RC', 'BRIS DE GLACE', 'INCENDIE', 'VOL', 'ASSISTANCE', 'PROTECTION JURIDIQUE'])),
                 'carte_grise_path' => $filePaths['carte_grise'],
                 'permis_path' => $filePaths['permis'],
@@ -553,6 +555,37 @@ class SimulationController extends Controller
         ]);
     }
 
+public function createPaymentIntent($devis_id)
+{
+    $devis = Devis::findOrFail($devis_id);
+    $contrat = Contrat::where('id_devis', $devis_id)
+        ->where('id_client', Auth::guard('api_clients')->id())
+        ->firstOrFail();
+
+    try {
+        \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+
+        $paymentIntent = \Stripe\PaymentIntent::create([
+            'amount' => ($devis->montant_base - 100) * 100, // MAD to cents
+            'currency' => 'mad',
+            'description' => "Paiement pour contrat auto #{$contrat->id}, devis #{$devis_id}",
+            'metadata' => [
+                'client_id' => Auth::guard('api_clients')->id(),
+                'devis_id' => $devis_id,
+                'contrat_id' => $contrat->id,
+            ],
+        ]);
+
+        return response()->json([
+            'payment_intent_id' => $paymentIntent->id,
+            'client_secret' => $paymentIntent->client_secret,
+            'amount' => $devis->montant_base - 100,
+        ]);
+    } catch (\Stripe\Exception\ApiErrorException $e) {
+        \Log::error('Stripe payment error: ' . $e->getMessage());
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+}
 
 public function storePayment(Request $request, $devis_id)
     {
@@ -562,45 +595,26 @@ public function storePayment(Request $request, $devis_id)
             'session_data' => session()->all(),
             'client_id' => Auth::guard('api_clients')->id(),
         ]);
-
-        $validated = $request->validate([
-            'payment_method' => 'required|string',
-        ]);
+        $request->validate(['payment_intent_id' => 'required|string']);
 
         $devis = Devis::findOrFail($devis_id);
         $contrat = Contrat::where('id_devis', $devis_id)
             ->where('id_client', Auth::guard('api_clients')->id())
             ->firstOrFail();
 
-        try {
+
             Stripe::setApiKey(config('services.stripe.secret'));
+            $paymentIntent = PaymentIntent::retrieve($request->input('payment_intent_id'));
+            if ($paymentIntent->status === 'succeeded') {
+                $contrat->update(['status' => 'ACTIVE']);
 
-            // Create PaymentIntent
-            $paymentIntent = PaymentIntent::create([
-                'amount' => ($devis->montant_base - 100) * 100, // Convert MAD to cents
-                'currency' => 'mad',
-                'payment_method' => $validated['payment_method'],
-                'confirmation_method' => 'manual',
-                'confirm' => true,
-                'description' => "Paiement pour contrat auto #{$contrat->id}, devis #{$devis_id}",
-                'metadata' => [
-                    'client_id' => Auth::guard('api_clients')->id(),
-                    'devis_id' => $devis_id,
-                    'contrat_id' => $contrat->id,
-                ],
-            ]);
-
-            // Create paiement record
-            $paiement = Paiement::create([
+                 $paiement = Paiement::create([
                 'amount' => $devis->montant_base - 100,
                 'payment_frequency' => 'manual',
                 'status' => $paymentIntent->status === 'succeeded' ? 'completed' : 'pending',
                 'payment_method' => $paymentIntent->payment_method,
                 'payment_date' => now(),
             ]);
-
-            if ($paymentIntent->status === 'succeeded') {
-                $contrat->update(['status' => 'ACTIVE']);
                 Log::info('Payment processed successfully', [
                     'contrat_id' => $contrat->id,
                     'devis_id' => $devis_id,
@@ -608,8 +622,9 @@ public function storePayment(Request $request, $devis_id)
                     'payment_intent_id' => $paymentIntent->id,
                 ]);
 
-                return redirect()->route('auto.result', ['devis_id' => $devis_id])
-                    ->with('success', 'Paiement effectué avec succès.');
+               // return redirect()->route('auto.result', ['devis_id' => $devis_id])
+                   // ->with('success', 'Paiement effectué avec succès.');
+                   return response()->json(['success' => true]);
             } else {
                 Log::warning('PaymentIntent not succeeded', [
                     'contrat_id' => $contrat->id,
@@ -617,18 +632,13 @@ public function storePayment(Request $request, $devis_id)
                     'paiement_id' => $paiement->id,
                     'payment_intent_status' => $paymentIntent->status,
                 ]);
-                return redirect()->route('auto.payment', ['devis_id' => $devis_id])
-                    ->with('error', 'Le paiement n\'a pas pu être finalisé. Veuillez réessayer.');
-            }
-        } catch (\Stripe\Exception\ApiErrorException $e) {
-            Log::error('Stripe payment error: ' . $e->getMessage(), [
-                'contrat_id' => $contrat->id,
-                'devis_id' => $devis_id,
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return redirect()->route('auto.payment', ['devis_id' => $devis_id])
-                ->with('error', 'Erreur lors du paiement : ' . $e->getMessage());
-        }
+               // return redirect()->route('auto.payment', ['devis_id' => $devis_id])
+                 //   ->with('error', 'Le paiement n\'a pas pu être finalisé. Veuillez réessayer.');
+                return response()->json(['error' => 'Le paiement n\'a pas pu être finalisé.'], 400);
+
+                }
+
     }
+
 }
 ?>

@@ -85,7 +85,7 @@ return [
     */
 
     'auth' => [
-        'guard' => env('FILAMENT_AUTH_GUARD', 'web'),
+        'guard' => 'filament',
         'pages' => [
             'login' => \Filament\Http\Livewire\Auth\Login::class,
         ],
@@ -114,8 +114,8 @@ return [
             Pages\Dashboard::class,
         ],
     ],
-     
-    
+
+
     /*
     |--------------------------------------------------------------------------
     | Resources
@@ -326,7 +326,7 @@ return [
 
     'middleware' => [
         'auth' => [
-           // Authenticate::class,
+            \Filament\Http\Middleware\Authenticate::class,
         ],
         'base' => [
             EncryptCookies::class,

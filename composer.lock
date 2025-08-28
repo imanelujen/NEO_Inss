@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a7336d5e1e1b62acc02f646235de281c",
+    "content-hash": "7b82e9184e49a66afd9eb8d66d469cd7",
     "packages": [
         {
             "name": "akaunting/laravel-money",
@@ -3932,16 +3932,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v17.5.0",
+            "version": "v17.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "313c7e3ed6af1d6948dc4262d2b9c6ee6b30394b"
+                "reference": "a6219df5df1324a0d3f1da25fb5e4b8a3307ea16"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/313c7e3ed6af1d6948dc4262d2b9c6ee6b30394b",
-                "reference": "313c7e3ed6af1d6948dc4262d2b9c6ee6b30394b",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/a6219df5df1324a0d3f1da25fb5e4b8a3307ea16",
+                "reference": "a6219df5df1324a0d3f1da25fb5e4b8a3307ea16",
                 "shasum": ""
             },
             "require": {
@@ -3985,9 +3985,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v17.5.0"
+                "source": "https://github.com/stripe/stripe-php/tree/v17.6.0"
             },
-            "time": "2025-07-30T17:16:57+00:00"
+            "time": "2025-08-27T19:32:42+00:00"
         },
         {
             "name": "symfony/console",
@@ -9018,12 +9018,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.0.2"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }

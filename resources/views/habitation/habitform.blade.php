@@ -101,7 +101,12 @@
                     <span x-show="codePostalError" class="text-red-500 text-sm">Le code postal est requis.</span>
                     @error('code_postal') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
-                <div class="flex justify-between">
+
+                <div class="mb-4 ">
+                    <button type="button" onclick="getLocation()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Utiliser ma position actuelle</button>
+<p id="location-status" class="text-sm text-gray-600 mt-2"></p>
+                </div>
+                    <div class="flex justify-between">
                     <a href="{{ route('habit.simulation.show', ['step' => 1]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Obtenir Devis</button>
                 </div>
@@ -254,6 +259,44 @@
                 }
             }
         }
+    </script>
+    <script>
+        function getLocation() {
+    const status = document.getElementById("location-status");
+    if (navigator.geolocation) {
+        status.innerText = "Recherche de votre position...";
+        navigator.geolocation.getCurrentPosition(success, error);
+    } else {
+        status.innerText = "La géolocalisation n'est pas supportée par votre navigateur.";
+    }
+}
+
+function success(position) {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    // Appel API OpenStreetMap (gratuit)
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.address) {
+                document.getElementById("ville").value = data.address.city || data.address.town || data.address.village || "";
+                document.getElementById("rue").value = data.address.road || "";
+                document.getElementById("code_postal").value = data.address.postcode || "";
+
+                document.getElementById("location-status").innerText = "✅ Adresse détectée automatiquement.";
+            } else {
+                document.getElementById("location-status").innerText = "Impossible de récupérer l'adresse.";
+            }
+        })
+        .catch(() => {
+            document.getElementById("location-status").innerText = "Erreur lors de la récupération de l'adresse.";
+        });
+}
+
+function error(err) {
+    document.getElementById("location-status").innerText = "Erreur de géolocalisation : " + err.message;
+}
     </script>
 </body>
 </html>
