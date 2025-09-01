@@ -640,5 +640,8 @@ public function storePayment(Request $request, $devis_id)
 
     }
 
+
+
+
 }
 ?>

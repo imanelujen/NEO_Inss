@@ -7,12 +7,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="container mx-auto p-4 max-w-4xl">
-        <h1 class="text-3xl font-bold text-blue-600 mb-6 text-center">Devis Assurance Auto</h1>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center px-3">
+    <div class="container mx-auto max-w-3xl w-full">
+        <h1 class="text-2xl md:text-3xl font-bold text-green-600 mb-6 text-center ">Devis Assurance Auto</h1>
         @if ($errors->any())
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <ul>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 shadow-sm text-sm">
+                <ul class="space-y-1">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -20,32 +20,34 @@
             </div>
         @endif
         @if (session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                {{ session('success') }}
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4 shadow-sm text-sm">
+              {{ session('success') }}
             </div>
         @endif
 
         <!-- Progress Bar -->
-        <div class="mb-8">
-            <div class="flex justify-between mb-2">
-                <span class="{{ $step >= 1 ? 'text-blue-600 font-bold' : 'text-gray-500' }}">Info Véhicule</span>
-                <span class="{{ $step >= 2 ? 'text-blue-600 font-bold' : 'text-gray-500' }}">Conducteur</span>
-                <span class="{{ $step == 3 ? 'text-blue-600 font-bold' : 'text-gray-500' }}">Résultat</span>
-            </div>
-            <div class="w-full bg-gray-300 rounded-full h-2">
-                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: {{ ($step / 3) * 100 }}%"></div>
-            </div>
-        </div>
+  <div class="mb-8">
+      <div class="flex justify-between text-xs sm:text-sm font-medium mb-2">
+        <span class="{{ $step >= 1 ? 'text-green-600 font-bold' : 'text-gray-400' }}">1. Véhicule</span>
+        <span class="{{ $step >= 2 ? 'text-green-600 font-bold' : 'text-gray-400' }}">2. Conducteur</span>
+        <span class="{{ $step == 3 ? 'text-green-600 font-bold' : 'text-gray-400' }}">3. Résultat</span>
+      </div>
+      <div class="w-full bg-gray-200 h-2 rounded-full">
+        <div class="bg-green-600 h-2 rounded-full transition-all duration-300"
+             style="width: {{ ($step / 3) * 100 }}%"></div>
+      </div>
+    </div>
 
         <!-- Form -->
+     <div class="bg-white shadow-lg rounded-xl p-6 sm:p-8">
         @if ($step == 1 || $step == 2)
-            <form method="POST" action="{{ route('auto.store') }}" class="bg-white p-6 rounded-lg shadow-md" x-data="formValidation()">
+            <form method="POST" action="{{ route('auto.store') }}" x-data="formValidation()">
                 @csrf
                 <input type="hidden" name="step" value="{{ $step }}">
                 @if ($step == 1)
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="vehicle_type">Type de véhicule</label>
-                        <select name="vehicle_type" id="vehicle_type" x-model="vehicle_type" @change="validateVehicleType()" required class="w-full border rounded p-2" :class="{ 'border-red-500': vehicleTypeError }">
+                        <label class="block text-lg font-medium text-blue-900" for="vehicle_type">Type de véhicule</label>
+                        <select name="vehicle_type" id="vehicle_type" x-model="vehicle_type" @change="validateVehicleType()" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': vehicleTypeError }">
                             <option value="" disabled selected>Sélectionner</option>
                             <option value="sedan" {{ old('vehicle_type', $data['vehicle_type'] ?? '') == 'sedan' ? 'selected' : '' }}>Sedan</option>
                             <option value="suv" {{ old('vehicle_type', $data['vehicle_type'] ?? '') == 'suv' ? 'selected' : '' }}>SUV</option>
@@ -56,20 +58,174 @@
                         @error('vehicle_type') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="make">Marque</label>
-                        <input type="text" name="make" x-model="make" @input="validateMake()" value="{{ old('make', $data['make'] ?? '') }}" required class="w-full border rounded p-2" :class="{ 'border-red-500': makeError }">
-                        <span x-show="makeError" class="text-red-500 text-sm">La marque est requise.</span>
-                        @error('make') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        <div x-data="{ make: '' }" class="space-y-4">
+                        <label class="block text-lg font-medium text-blue-900" for="make">Marque</label>
+                         <select
+        x-model="make"
+        class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500">
+<option value="">-- Sélectionnez --</option>
+<option value="ALFA_ROMEO">Alfa Romeo</option>
+<option value="ASTON_MARTIN">Aston Martin</option>
+<option value="AUDI">Audi</option>
+<option value="BENTLEY">Bentley</option>
+<option value="BMW">BMW</option>
+<option value="BUGATTI">Bugatti</option>
+<option value="BYD">BYD</option>
+<option value="CADILLAC">Cadillac</option>
+<option value="CHEVROLET">Chevrolet</option>
+<option value="CHRYSLER">Chrysler</option>
+<option value="CITROEN">Citroën</option>
+<option value="CUPRA">Cupra</option>
+<option value="DACIA">Dacia</option>
+<option value="DAEWOO">Daewoo</option>
+<option value="DAIHATSU">Daihatsu</option>
+<option value="DODGE">Dodge</option>
+<option value="DS">DS</option>
+<option value="FERRARI">Ferrari</option>
+<option value="FIAT">Fiat</option>
+<option value="FORD">Ford</option>
+<option value="GENESIS">Genesis</option>
+<option value="GMC">GMC</option>
+<option value="HONDA">Honda</option>
+<option value="HUMMER">Hummer</option>
+<option value="HYUNDAI">Hyundai</option>
+<option value="INFITI">Infiniti</option>
+<option value="ISUZU">Isuzu</option>
+<option value="JAGUAR">Jaguar</option>
+<option value="JEEP">Jeep</option>
+<option value="KIA">Kia</option>
+<option value="KOENIGSEGG">Koenigsegg</option>
+<option value="LADA">Lada</option>
+<option value="LAMBORGHINI">Lamborghini</option>
+<option value="LANCIA">Lancia</option>
+<option value="LAND_ROVER">Land Rover</option>
+<option value="LEXUS">Lexus</option>
+<option value="LINCOLN">Lincoln</option>
+<option value="LOTUS">Lotus</option>
+<option value="MASERATI">Maserati</option>
+<option value="MAYBACH">Maybach</option>
+<option value="MAZDA">Mazda</option>
+<option value="MCLAREN">McLaren</option>
+<option value="MERCEDES">Mercedes</option>
+<option value="MG">MG</option>
+<option value="MINI">Mini</option>
+<option value="MITSUBISHI">Mitsubishi</option>
+<option value="NISSAN">Nissan</option>
+<option value="OPEL">Opel</option>
+<option value="PEUGEOT">Peugeot</option>
+<option value="PORSCHE">Porsche</option>
+<option value="RENAULT">Renault</option>
+<option value="ROLLS_ROYCE">Rolls Royce</option>
+<option value="ROVER">Rover</option>
+<option value="SAAB">Saab</option>
+<option value="SEAT">Seat</option>
+<option value="ŠKODA">Škoda</option>
+<option value="SMART">Smart</option>
+<option value="SSANGYONG">SsangYong</option>
+<option value="SUBARU">Subaru</option>
+<option value="SUZUKI">Suzuki</option>
+<option value="TESLA">Tesla</option>
+<option value="TOYOTA">Toyota</option>
+<option value="VOLKSWAGEN">Volkswagen</option>
+<option value="VOLVO">Volvo</option>
+
+        </select>
+    <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3">
+          <!-- Example card -->
+        <div
+            @click="make = 'AUDI'"
+            :class="make === 'AUDI' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/audi.png" alt="Audi" class="h-10 sm:h-12 object-contain mb-1">
+            <span class="text-sm font-semibold">AUDI</span>
+        </div>
+
+        <div
+            @click="make = 'BMW'"
+            :class="make === 'BMW' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/bmw.png" alt="BMW" class="h-8 sm:h-12 object-contain mb-1">
+            <span class="text-sm font-semibold">BMW</span>
+        </div>
+        <div
+            @click="make = 'CITROEN'"
+            :class="make === 'CITROEN' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/citreon.jpg" alt="Citroën" class="h-8 sm:h-12 object-contain mb-1">
+            <span class="text-sm font-semibold">CITROËN</span>
+       </div>
+        <div
+            @click="make = 'DACIA'"
+            :class="make === 'DACIA' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/dacia.jpg" alt="Dacia" class="h-8 sm:h-12 object-contain mb-1">
+            <span class="text-sm font-semibold">DACIA</span>
+        </div>
+        <div
+            @click="make = 'FIAT'"
+            :class="make === 'FIAT' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/fiat.jpg" alt="Fiat" class="h-8 sm:h-10 object-contain mb-1">
+            <span class="text-sm font-semibold">FIAT</span>
+        </div>
+        <div
+            @click="make = 'HYUNDAI'"
+            :class="make === 'HYUNDAI' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/HYUNDAI.jpg" alt="HYUNDAI" class="h-8 sm:h-12 object-contain mb-1">
+            <span class="text-sm font-semibold">HYUNDAI</span>
+        </div>
+        <div
+            @click="make = 'MERCEDES'"
+            :class="make === 'MERCEDES' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/MERCEDES.jpg" alt="MERCEDES" class="h-8 sm:h-10 object-contain mb-1">
+            <span class="text-sm font-semibold">MERCEDES</span>
+        </div>
+        <div
+            @click="make = 'PEUGEOT'"
+            :class="make === 'PEUGEOT' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/PEUGEOT.png" alt="PEUGEOT" class="h-8 sm:h-10 object-contain mb-1">
+            <span class="text-sm font-semibold">PEUGEOT</span>
+        </div>
+        <div
+            @click="make = 'RENAULT'"
+            :class="make === 'RENAULT' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/RENAULT.jpg" alt="RENAULT" class="h-8 sm:h-10 object-contain mb-1">
+            <span class="text-sm font-semibold">RENAULT</span>
+        </div>
+        <div
+            @click="make = 'TOYOTA'"
+            :class="make === 'TOYOTA' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/TOYOTA.jpg" alt="TOYOTA" class="h-8 sm:h-10 object-contain mb-1">
+            <span class="text-sm font-semibold">TOYOTA</span>
+        </div>
+        <div
+            @click="make = 'VOLKSWAGEN'"
+            :class="make === 'VOLKSWAGEN' ? 'border-red-500 ring-2 ring-red-500' : 'border-gray-200'"
+            class="cursor-pointer border rounded-lg p-3 flex flex-col items-center justify-center hover:shadow-md transition">
+            <img src="/images/VOLKSWAGEN.png" alt="VOLKSWAGEN" class="h-10 sm:h-12 object-contain mb-1">
+            <span class="text-sm font-semibold">VOLKSWAGEN</span>
+        </div>
+      <span x-show="makeError" class="text-red-500 text-sm">La marque est requise.</span>
+         @error('make') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+     <input type="hidden" name="make" x-model="make" @input="validateMake()" value="{{ old('make', $data['make'] ?? '') }}">
                     </div>
+                </div>
+
+
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="model">Modèle</label>
-                        <input type="text" name="model" x-model="model" @input="validateModel()" value="{{ old('model', $data['model'] ?? '') }}" required class="w-full border rounded p-2" :class="{ 'border-red-500': modelError }">
+                        <label class="block text-lg font-medium text-blue-900" for="model">Modèle</label>
+                        <input type="text" name="model" x-model="model" @input="validateModel()" value="{{ old('model', $data['model'] ?? '') }}" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': modelError }">
                         <span x-show="modelError" class="text-red-500 text-sm">Le modèle est requis.</span>
                         @error('model') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="fuel_type">Carburant</label>
-                        <select name="fuel_type" id="fuel_type" x-model="fuel_type" @change="validateFuelType()" required class="w-full border rounded p-2" :class="{ 'border-red-500': fuelTypeError }">
+                        <label class="block text-lg font-medium text-blue-900" for="fuel_type">Carburant</label>
+                        <select name="fuel_type" id="fuel_type" x-model="fuel_type" @change="validateFuelType()" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': fuelTypeError }">
                             <option value="" disabled selected>Sélectionner</option>
                             <option value="ESSENCE" {{ old('fuel_type', $data['fuel_type'] ?? '') == 'ESSENCE' ? 'selected' : '' }}>Essence</option>
                             <option value="DIESEL" {{ old('fuel_type', $data['fuel_type'] ?? '') == 'DIESEL' ? 'selected' : '' }}>Diesel</option>
@@ -80,42 +236,50 @@
                         @error('fuel_type') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="tax_horsepower">Puissance Fiscale (CV)</label>
-                        <input type="number" name="tax_horsepower" x-model="tax_horsepower" @input="validateTaxHorsepower()" value="{{ old('tax_horsepower', $data['tax_horsepower'] ?? '') }}" min="1" required class="w-full border rounded p-2" :class="{ 'border-red-500': taxHorsepowerError }">
+                        <label class="block text-lg font-medium text-blue-900" for="tax_horsepower">Puissance Fiscale (CV)</label>
+                        <input type="number" name="tax_horsepower" x-model="tax_horsepower" @input="validateTaxHorsepower()" value="{{ old('tax_horsepower', $data['tax_horsepower'] ?? '') }}" min="1" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': taxHorsepowerError }">
                         <span x-show="taxHorsepowerError" class="text-red-500 text-sm">La puissance fiscale doit être positive.</span>
                         @error('tax_horsepower') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="vehicle_value">Valeur du Véhicule (DH)</label>
-                        <input type="number" name="vehicle_value" x-model="vehicle_value" @input="validateVehicleValue()" value="{{ old('vehicle_value', $data['vehicle_value'] ?? '') }}" min="1000" required class="w-full border rounded p-2" :class="{ 'border-red-500': vehicleValueError }">
+                        <label class="block text-lg font-medium text-blue-900" for="vehicle_value">Valeur du Véhicule (DH)</label>
+                        <input type="number" name="vehicle_value" x-model="vehicle_value" @input="validateVehicleValue()" value="{{ old('vehicle_value', $data['vehicle_value'] ?? '') }}" min="1000" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': vehicleValueError }">
                         <span x-show="vehicleValueError" class="text-red-500 text-sm">La valeur doit être supérieure ou égale à 1000 DH.</span>
                         @error('vehicle_value') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="registration_date">Date de Mise en Circulation</label>
-                        <input type="date" name="registration_date" x-model="registration_date" @input="validateRegistrationDate()" value="{{ old('registration_date', $data['registration_date'] ?? '') }}" required class="w-full border rounded p-2" :class="{ 'border-red-500': registrationDateError }">
+                        <label class="block text-lg font-medium text-blue-900" for="registration_date">Date de Mise en Circulation</label>
+                        <input type="date" name="registration_date" x-model="registration_date" @input="validateRegistrationDate()" value="{{ old('registration_date', $data['registration_date'] ?? '') }}" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': registrationDateError }">
                         <span x-show="registrationDateError" class="text-red-500 text-sm">La date doit être antérieure à aujourd'hui.</span>
                         @error('registration_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
-                    <div class="flex justify-between">
-                        <a href="{{ route('auto.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Réinitialiser</a>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Suivant</button>
-                    </div>
+           <div class="flex justify-between items-center mt-6 space-x-4">
+    <a href="{{ route('auto.reset') }}"
+       class="bg-gray-500 text-white px-5.5 py-3 rounded-xl shadow-md hover:bg-gray-600 hover:shadow-lg transition">
+       Réinitialiser
+    </a>
+
+    <button type="submit"
+       class="bg-green-600 text-white px-6 py-3 rounded-xl shadow-md hover:bg-green-700 hover:shadow-lg transition">
+       Suivant →
+    </button>
+</div>
+
                 @elseif ($step == 2)
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="date_obtention_permis">Date d'Obtention du Permis</label>
-                        <input type="date" name="date_obtention_permis" x-model="date_obtention_permis" @input="validateDateObtentionPermis()" value="{{ old('date_obtention_permis', $data['date_obtention_permis'] ?? '') }}" required class="w-full border rounded p-2" :class="{ 'border-red-500': dateObtentionPermisError }">
+                        <label class="block text-lg font-medium text-blue-900" for="date_obtention_permis">Date d'Obtention du Permis</label>
+                        <input type="date" name="date_obtention_permis" x-model="date_obtention_permis" @input="validateDateObtentionPermis()" value="{{ old('date_obtention_permis', $data['date_obtention_permis'] ?? '') }}" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': dateObtentionPermisError }">
                         <span x-show="dateObtentionPermisError" class="text-red-500 text-sm">La date doit être antérieure à aujourd'hui.</span>
                         @error('date_obtention_permis') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="bonus_malus">Bonus-Malus</label>
-                        <input type="number" step="0.01" name="bonus_malus" x-model="bonus_malus" @input="validateBonusMalus()" value="{{ old('bonus_malus', $data['bonus_malus'] ?? '1.00') }}" min="0.50" max="3.50" required class="w-full border rounded p-2" :class="{ 'border-red-500': bonusMalusError }">
+                        <label class="block text-lg font-medium text-blue-900" for="bonus_malus">Bonus-Malus</label>
+                        <input type="number" step="0.01" name="bonus_malus" x-model="bonus_malus" @input="validateBonusMalus()" value="{{ old('bonus_malus', $data['bonus_malus'] ?? '1.00') }}" min="0.50" max="3.50" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': bonusMalusError }">
                         <span x-show="bonusMalusError" class="text-red-500 text-sm">Le bonus-malus doit être entre 0.50 et 3.50.</span>
                         @error('bonus_malus') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2" for="historique_accidents">Historique des Accidents</label>
+                        <label class="block text-lg font-medium text-blue-900" for="historique_accidents">Historique des Accidents</label>
                         <textarea name="historique_accidents" x-model="historique_accidents" class="w-full border rounded p-2" :class="{ 'border-red-500': historiqueAccidentsError }">{{ old('historique_accidents', $data['historique_accidents'] ?? '') }}</textarea>
                         @error('historique_accidents') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
@@ -127,7 +291,7 @@
             </form>
        @elseif ($step == 3 && isset($data['devis_id']))
             <div class="text-center">
-                <h2 class="text-2xl font-bold text-blue-600 mb-6">Votre Devis Assurance Auto</h2>
+                <h2 class="text-2xl font-bold text-green-600 mb-6">Votre Devis Assurance Auto</h2>
                 @if (isset($data['devis_status']) && $data['devis_status'] == 'BROUILLON')
                     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                         <h2 class="text-2xl font-semibold mb-4 text-center">Choisissez votre formule</h2>
@@ -140,7 +304,7 @@
                                         <div class="flex justify-between items-center">
                                             <div>
                                                 <label class="block text-lg font-medium text-gray-800">{{ $label }}</label>
-                                                <p class="text-2xl font-bold text-blue-600">{{ number_format($data['formules_choisis'][$key] ?? 0, 2) }} DH/an</p>
+                                                <p class="text-2xl font-bold text-green-700">{{ number_format($data['formules_choisis'][$key] ?? 0, 2) }} DH/an</p>
                                             </div>
                                             <input type="radio" name="offer" value="{{ $key }}" {{ $data['selected_offer'] == $key ? 'checked' : '' }} required class="h-5 w-5 text-blue-600">
                                         </div>
@@ -197,12 +361,12 @@
                                                 @endforeach
                                             @endif
                                         </ul>
-                                        <button @click="openCalculation = !openCalculation" type="button" class="mt-4 text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                                    <!--    <button @click="openCalculation = !openCalculation" type="button" class="mt-4 text-blue-600 hover:text-blue-800 text-sm flex items-center">
                                             <span>Détails du calcul</span>
                                             <svg x-bind:class="{ 'rotate-180': openCalculation }" class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                             </svg>
-                                        </button>
+                                        </button>-->
                                         <div x-show="openCalculation" class="mt-2 text-sm text-gray-600 bg-gray-50 p-4 rounded">
                                             <h3 class="font-semibold mb-2">Calcul du tarif</h3>
                                             <ul class="list-disc pl-5 space-y-1">
@@ -226,17 +390,17 @@
                             @error('offer') <span class="text-red-500 text-sm mt-2 block">{{ $message }}</span> @enderror
                             <div class="flex justify-between mt-6">
                                 <a href="{{ route('auto.show', ['step' => 2]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
-                                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Confirmer la formule</button>
+                                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Confirmer la formule</button>
                             </div>
                         </form>
-                        
+
                     </div>
                 @else
                     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                         <p><strong>Formule choisie :</strong> {{ ucfirst($data['selected_offer'] ?? 'Aucune') }}</p>
                         <p><strong>Montant du devis :</strong> {{ number_format($data['montant_base'] ?? 0, 2) }} DH/an</p>
                         <div class="mt-6 flex justify-center space-x-4">
-                            <a href="{{ route('auto.download', ['devis_id' => $data['devis_id']]) }}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Télécharger le devis</a>
+                            <a href="{{ route('auto.download', ['devis_id' => $data['devis_id']]) }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-black-700">Télécharger le devis</a>
                             <form action="{{ route('auto.email', ['devis_id' => $data['devis_id']]) }}" method="POST" class="inline-flex items-center">
                                 @csrf
                                 <input type="email" name="email" placeholder="Votre e-mail" required class="border rounded p-2 mr-2">
@@ -256,19 +420,8 @@
                 <a href="{{ route('auto.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 mt-4 inline-block">Recommencer</a>
             </div>
         @endif
-        
-        <div class="mt-8">
-            <h2 class="text-xl font-bold text-blue-600 mb-4">Actualités (WordPress)</h2>
-            @if (!empty($posts))
-                <ul class="list-disc pl-5">
-                    @foreach ($posts as $post)
-                        <li><a href="{{ $post['link'] }}" class="text-blue-600 hover:underline">{{ $post['title']['rendered'] }}</a></li>
-                    @endforeach
-                </ul>
-            @else
-                <p class="text-gray-600">Aucune actualité disponible.</p>
-            @endif
-        </div>
+
+
     </div>
     <script>
         function formValidation() {

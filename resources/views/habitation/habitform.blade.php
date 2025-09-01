@@ -8,7 +8,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="container mx-auto p-4 max-w-2xl">
-        <h1 class="text-3xl font-bold text-blue-600 mb-6 text-center">Devis Assurance Habitation</h1>
+        <h1 class="text-3xl font-bold text-blue-600 mb-6 text-center">Votre Devis Assurance Habitation</h1>
         @if ($errors->any())
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 <ul>
@@ -116,15 +116,6 @@
              @if ($step == 3 && isset($data['devis_id']))
                 <input type="hidden" name="devis_id" value="{{ $data['devis_id'] }}">
                  <div class="text-center">
-                    <h2 class="text-2xl font-bold text-blue-600 mb-4">Votre Devis Assurance Habitation</h2>
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                        <p><strong>Type de logement :</strong> {{ $data['housing_type'] }}</p>
-                        <p><strong>Surface :</strong> {{ $data['surface_area'] }} m²</p>
-                        <p><strong>Statut d'occupation :</strong> {{ $data['occupancy_status'] }}</p>
-                        <p><strong>Valeur estimée :</strong> {{ number_format($data['housing_value'], 2) }} DH</p>
-                        <p><strong>Année de construction :</strong> {{ $data['construction_year'] }}</p>
-                        <p><strong>Adresse :</strong> {{ $data['rue'] }}, {{ $data['ville'] }}, {{ $data['code_postal'] }}</p>
-                    </div>
                     @if (isset($data['devis_status']) && $data['devis_status'] == 'BROUILLON')
                         <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                             <h3 class="text-lg font-semibold mb-4">Choisissez votre formule</h3>
@@ -209,18 +200,12 @@ Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (e
                                                 @endforeach
                                             @endif
                                         </ul>
-                                        <button @click="openCalculation = !openCalculation" type="button" class="mt-4 text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                                            <span>Détails du calcul</span>
-                                            <svg x-bind:class="{ 'rotate-180': openCalculation }" class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </button>
                                     </div>
                                 @endforeach
                             </div>
                             @error('offer') <span class="text-red-500 text-sm mt-2 block">{{ $message }}</span> @enderror
                             <div class="flex justify-between mt-6">
-                                <a href="{{ route('habit.show', ['step' => 2]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
+                                <a href="{{ route('habit.simulation.show', ['step' => 2]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
                                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Confirmer la formule</button>
                             </div>
                         </form>
@@ -242,16 +227,25 @@ Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (e
                     </div>
                 @endif
                 <div class="mt-6 flex justify-center">
-                    <a href="{{ route('habit.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Nouveau Devis</a>
+                    <a href="{{ route('habit.simulation.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Nouveau Devis</a>
                 </div>
             </div>
         @else
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 <p>Erreur : Aucun devis trouvé. Veuillez recommencer.</p>
-                <a href="{{ route('habit.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 mt-4 inline-block">Recommencer</a>
+                <a href="{{ route('habit.simulation.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 mt-4 inline-block">Recommencer</a>
             </div>
         @endif
         
+             <h2 class="text-2xl font-bold text-blue-600 mb-4">Votre Devis Assurance Habitation</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                        <p><strong>Type de logement :</strong> {{ $data['housing_type'] }}</p>
+                        <p><strong>Surface :</strong> {{ $data['surface_area'] }} m²</p>
+                        <p><strong>Statut d'occupation :</strong> {{ $data['occupancy_status'] }}</p>
+                        <p><strong>Valeur estimée :</strong> {{ number_format($data['housing_value'], 2) }} DH</p>
+                        <p><strong>Année de construction :</strong> {{ $data['construction_year'] }}</p>
+                        <p><strong>Adresse :</strong> {{ $data['rue'] }}, {{ $data['ville'] }}, {{ $data['code_postal'] }}</p>
+                    </div>
         <div class="mt-8">
             <h2 class="text-xl font-bold text-blue-600 mb-4">Actualités (WordPress)</h2>
             @if (!empty($posts))

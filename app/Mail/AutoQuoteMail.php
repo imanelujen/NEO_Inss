@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Mail;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,14 +24,15 @@ class AutoQuoteMail extends Mailable
         $this->offer = $offer;
     }
 
-    public function build()
-    {
-        return $this->subject('Votre Devis Auto - Neo Assurances')
-            ->view('emails.auto_quote')
-            ->attachData(
-                PDF::loadView('auto.pdf', ['quote' => $this->quote, 'offer' => $this->offer])->output(),
-                'devis_auto_' . $this->quote->id . '.pdf',
-                ['mime' => 'application/pdf']
-            );
-    }
+public function build()
+{
+    return $this->subject('Votre Devis Auto - Neo Assurances')
+        ->view('emails.auto_quote')
+        ->attachData(
+            Pdf::loadView('auto.pdf', ['quote' => $this->quote, 'offer' => $this->offer])->output(),
+            'devis_auto_' . $this->quote->id . '.pdf',
+            ['mime' => 'application/pdf']
+        );
+}
+
 }

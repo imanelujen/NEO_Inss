@@ -79,7 +79,7 @@
             </div>
             @error('agence_id') <span class="text-red-500 text-sm mb-4 block">{{ $message }}</span> @enderror
             <div class="flex justify-between">
-                <a href="{{ route('habitation.result', ['devis_id' => $devis_id]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
+                <a href="{{ route('habit.result', ['devis_id' => $devis_id]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
                 <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Finaliser le contrat</button>
             </div>
         </form>

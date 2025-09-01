@@ -51,7 +51,11 @@ Route::middleware(['auth:api_clients'])->group(function () {
     Route::post('/habit/simulate/subscribe/{devis_id}', [habitSimulerController::class, 'storeSubscription'])->name('habit.store_subscription');
     Route::get('/auto/{devis_id}/payment-intent', [SimulationController::class, 'createPaymentIntent'])->name('auto.payment.intent');
     Route::post('/auto/{devis_id}/payment-store', [SimulationController::class, 'storePayment'])->name('auto.payment.store');
-    
+    Route::post('habit/subscribe/documents/{devis_id}', [habitSimulerController::class, 'storeDocuments'])->name('habit.documents.store');
+    Route::get('habit/subscribe/documents/{devis_id}', [habitSimulerController::class, 'showDocuments'])->name('habit.documents');
+    Route::post('/habit/{devis_id}/appointment', [habitSimulerController::class, 'storeAppointment'])->name('habit.appointment.store');
+    Route::get('/habit/{devis_id}/appointment', [habitSimulerController::class, 'createAppointment']) ->name('habit.appointment.create');
+
 
 });
 
