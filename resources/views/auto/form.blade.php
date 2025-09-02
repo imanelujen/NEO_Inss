@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center px-3">
     <div class="container mx-auto max-w-3xl w-full">
-        <h1 class="text-2xl md:text-3xl font-bold text-green-600 mb-6 text-center ">Devis Assurance Auto</h1>
+        <h1 class="text-2xl md:text-3xl font-bold text-green mb-6 text-center ">Devis Assurance Auto</h1>
 
         @if ($errors->any())
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 shadow-sm text-sm">
@@ -64,22 +64,22 @@
                          <select
         x-model="make"
         class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500">
-<option value="">-- Sélectionnez --</option>
-<option value="ALFA_ROMEO">Alfa Romeo</option>
-<option value="ASTON_MARTIN">Aston Martin</option>
-<option value="AUDI">Audi</option>
-<option value="BENTLEY">Bentley</option>
-<option value="BMW">BMW</option>
-<option value="BUGATTI">Bugatti</option>
-<option value="BYD">BYD</option>
-<option value="CADILLAC">Cadillac</option>
-<option value="CHEVROLET">Chevrolet</option>
-<option value="CHRYSLER">Chrysler</option>
-<option value="CITROEN">Citroën</option>
-<option value="CUPRA">Cupra</option>
-<option value="DACIA">Dacia</option>
-<option value="DAEWOO">Daewoo</option>
-<option value="DAIHATSU">Daihatsu</option>
+   <option value="">-- Sélectionnez --</option>
+   <option value="ALFA_ROMEO">Alfa Romeo</option>
+   <option value="ASTON_MARTIN">Aston Martin</option>
+   <option value="AUDI">Audi</option>
+   <option value="BENTLEY">Bentley</option>
+   <option value="BMW">BMW</option>
+   <option value="BUGATTI">Bugatti</option>
+   <option value="BYD">BYD</option>
+   <option value="CADILLAC">Cadillac</option>
+   <option value="CHEVROLET">Chevrolet</option>
+   <option value="CHRYSLER">Chrysler</option>
+   <option value="CITROEN">Citroën</option>
+   <option value="CUPRA">Cupra</option>
+   <option value="DACIA">Dacia</option>
+   <option value="DAEWOO">Daewoo</option>
+   <option value="DAIHATSU">Daihatsu</option>
 <option value="DODGE">Dodge</option>
 <option value="DS">DS</option>
 <option value="FERRARI">Ferrari</option>
@@ -238,8 +238,8 @@
                     </div>
                     <div class="mb-4">
                         <label class="block text-lg font-medium text-blue-900" for="tax_horsepower">Puissance Fiscale (CV)</label>
-                        <input type="number" name="tax_horsepower" x-model="tax_horsepower" @input="validateTaxHorsepower()" value="{{ old('tax_horsepower', $data['tax_horsepower'] ?? '') }}" min="1" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': taxHorsepowerError }">
-                        <span x-show="taxHorsepowerError" class="text-red-500 text-sm">La puissance fiscale doit être positive.</span>
+                        <input type="number" name="tax_horsepower" x-model="tax_horsepower" @input="validateTaxHorsepower()" value="{{ old('tax_horsepower', $data['tax_horsepower'] ?? '') }}" min="5" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm" :class="{ 'border-red-500': taxHorsepowerError }">
+                        <span x-show="taxHorsepowerError" class="text-red-500 text-sm">La puissance fiscale doit être supérieure ou égale à 5..</span>
                         @error('tax_horsepower') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="mb-4">
@@ -293,10 +293,13 @@
                 @endif
             </form>
        @elseif ($step == 3 && isset($data['devis_id']))
-            <div class="text-center">
-                <div class="animate-fade-in">
-    <h2 class="text-2xl font-bold text-green-600 mb-6">Votre Devis Assurance Auto</h2>
-          </div>
+ <div class="relative">
+        <!-- Background image area -->
+        <div class="step3-header-bg">
+            <h2 class="text-2xl font-bold text-green-600 mb-6 text-center relative z-10">
+                Votre Devis Assurance Auto
+            </h2>
+        </div>
                 @if (isset($data['devis_status']) && $data['devis_status'] == 'BROUILLON')
                     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                         <h2 class="text-2xl font-semibold mb-4 text-center">Choisissez votre formule</h2>
@@ -451,7 +454,7 @@
                     this.fuelTypeError = !this.fuel_type;
                 },
                 validateTaxHorsepower() {
-                    this.taxHorsepowerError = !this.tax_horsepower || this.tax_horsepower < 1;
+                    this.taxHorsepowerError = !this.tax_horsepower || this.tax_horsepower < 5;
                 },
                 validateVehicleValue() {
                     this.vehicleValueError = !this.vehicle_value || this.vehicle_value < 1000;

@@ -522,7 +522,7 @@ public function downloadQuote(Request $request, $devis_id)
                 'id_conducteur' => $conducteur->id,
                 'garanties' => json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'basic' ? json_encode(['RC']) :
                               (json_decode($devis->OFFRE_CHOISIE, true)['offer'] == 'standard' ? json_encode(['RC', 'BRIS DE GLACE', 'INCENDIE', 'VOL']) :
-                              json_encode(['RC', 'BRIS DE GLACE', 'INCENDIE', 'VOL', 'ASSISTANCE', 'PROTECTION JURIDIQUE'])),
+                              json_encode(['RC', 'BRIS DE GLACE', 'INCENDIE', 'VOL', 'ASSISTANCE', 'DOMMAGE COLLISION','PROTECTION JURIDIQUE'])),
                 'carte_grise_path' => $filePaths['carte_grise'],
                 'permis_path' => $filePaths['permis'],
                 'cin_recto_path' => $filePaths['cin_recto'],
@@ -566,7 +566,7 @@ public function downloadQuote(Request $request, $devis_id)
 
         $paymentDetails = [
             'start_date' => $contrat->start_date,
-            'amount' => $devis->montant_base - 100,
+            'amount' => $devis->montant_base,
             'garanties' => $garanties,
         ];
 

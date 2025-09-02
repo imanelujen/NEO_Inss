@@ -545,7 +545,7 @@
 
                 <div class="price-section">
                     <div class="price-label">Montant de votre assurance</div>
-                    <div class="price-amount">{{ number_format($data['montant_base'] ?? 450, 0) }}€</div>
+                    <div class="price-amount">{{ number_format($data['montant_base'] ?? 450, 0) }}DH</div>
                     <div class="price-period">par an • Paiement mensuel disponible</div>
                 </div>
             </div>

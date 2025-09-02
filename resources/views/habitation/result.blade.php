@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Résultat Devis Auto - UMBRELLA</title>
+    <title>Résultat Devis Habitation - UMBRELLA</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
@@ -468,7 +468,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-home"></i> Votre Devis Hbitation Result</h1>
+            <h1><i class="fas fa-home"></i> Votre Devis Habitation Result</h1>
             <p class="subtitle">UMBRELLA - Protection complète pour votre véhicule</p>
         </div>
 
@@ -509,7 +509,7 @@
                         </div>
                         <div class="info-item">
                             <div class="info-label">Surface (m²)</div>
-                            <div class="info-value">{{ $data['surface'] ?? 'Non renseignée' }}</div>
+                            <div class="info-value">{{ $data['surface_area'] ?? 'Non renseignée' }}</div>
                         </div>
                         <div class="info-item">
                             <div class="info-label">valeur du propriété</div>
@@ -566,11 +566,11 @@
 
             <div class="actions-section">
                 <div class="action-buttons">
-                    <a href="{{ route('auto.subscribe', ['devis_id' => $quote->id ?? 1]) }}" class="btn btn-primary">
+                    <a href="{{ route('habit.subscribe', ['devis_id' => $quote->id ?? 1]) }}" class="btn btn-primary">
                         <i class="fas fa-pen-to-square"></i>
                         Souscrire maintenant
                     </a>
-                    <a href="{{ route('auto.download', ['devis_id' => $quote->id ?? 1]) }}" class="btn btn-secondary">
+                    <a href="{{ route('habit.download', ['devis_id' => $quote->id ?? 1]) }}" class="btn btn-secondary">
                         <i class="fas fa-download"></i>
                         Télécharger PDF
                     </a>
@@ -578,7 +578,7 @@
 
                 <div class="email-form">
                     <h3><i class="fas fa-envelope"></i> Recevoir par e-mail</h3>
-                    <form action="{{ route('auto.email', ['devis_id' => $quote->id ?? 1]) }}" method="POST">
+                    <form action="{{ route('habit.email', ['devis_id' => $quote->id ?? 1]) }}" method="POST">
                         <!-- @csrf -->
                         <div class="form-group">
                             <input type="email"
@@ -597,7 +597,7 @@
         </div>
 
         <div class="footer-nav">
-            <a href="{{ route('auto.show', ['step' => 1]) }}">
+            <a href="{{ route('habit.simulation.show', ['step' => 1]) }}">
                 <i class="fas fa-arrow-left"></i>
                 Nouveau Devis
             </a>

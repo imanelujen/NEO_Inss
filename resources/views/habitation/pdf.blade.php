@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Devis Auto - Neo Assurances</title>
+    <title>Devis HABITATION - Neo Assurances</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -20,7 +20,7 @@
             padding: 30px;
         }
         .header {
-            border-bottom: 3px solid #2563eb;
+            border-bottom: 3px solid #471b37ff;
             padding-bottom: 10px;
             margin-bottom: 20px;
         }
@@ -39,7 +39,7 @@
         .details h2 {
             font-size: 18px;
             margin-bottom: 10px;
-            color: #2563eb;
+            color: #471b37ff;
         }
         .details table {
             width: 100%;
@@ -62,7 +62,7 @@
             border-left: 4px solid #2563eb;
             font-size: 18px;
             font-weight: bold;
-            color: #1e3a8a;
+            color: #471b37ff;
         }
         .footer {
             text-align: center;
@@ -76,44 +76,36 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>Devis Auto - Neo Assurances</h1>
+            <h1>Devis HABITATION - UMBRELLA</h1>
             <p>Date : {{ now()->format('d/m/Y') }}</p>
         </div>
 
         <!-- Vehicle & Driver Details -->
         <div class="details">
-            <h2>Détails du véhicule et du conducteur</h2>
+            <h2>Détails du propriété</h2>
             <table>
                 <tr>
-                    <th>Type de véhicule</th>
-                    <td>{{ $data['vehicle_type'] }}</td>
+                    <th>Type de propriété</th>
+                    <td>{{ $data['housing_type'] }}</td>
                 </tr>
                 <tr>
-                    <th>Marque</th>
-                    <td>{{ $data['make'] }}</td>
+                    <th>surface m²</th>
+                    <td>{{ $data['surface_area'] }}</td>
                 </tr>
                 <tr>
-                    <th>Modèle</th>
-                    <td>{{ $data['model'] }}</td>
+                    <th>valeur</th>
+                    <td>{{ $data['housing_value'] }}</td>
                 </tr>
                 <tr>
-                    <th>Année d’immatriculation</th>
-                    <td>{{ $data['registration_date'] }}</td>
+                    <th>Ville</th>
+                    <td>{{ $data['ville'] }}</td>
                 </tr>
                 <tr>
-                    <th>Date d’obtention du permis</th>
-                    <td>{{ $data['date_obtention_permis'] }}</td>
+                    <th>Rue</th>
+                    <td>{{ $data['rue'] }}</td>
                 </tr>
                 <tr>
-                    <th>Bonus-Malus</th>
-                    <td>{{ $data['bonus_malus'] }}</td>
-                </tr>
-                <tr>
-                    <th>Historique d’accidents</th>
-                    <td>{{ $data['historique_accidents'] }}</td>
-                </tr>
-                <tr>
-                    <th>Formule choisie</th>
+                    <th>Offre choisie</th>
                     <td>{{ ucfirst($data['selected_offer']) }}</td>
                 </tr>
             </table>
@@ -121,13 +113,13 @@
 
         <!-- Amount -->
         <div class="amount">
-            Montant du devis : {{ number_format($data['quote_amount'], 2) }} €
+            Montant du devis : {{ number_format($data['montant_base'], 2) }} DH/AN
         </div>
 
         <!-- Footer -->
         <div class="footer">
-            Ce devis est généré automatiquement par Neo Assurances.<br>
-            Pour toute question, contactez-nous : support@neoassurances.ma
+            Ce devis est généré automatiquement par UMBRELLA.<br>
+            Pour toute question, contactez-nous : support@UMBRELLA.ma
         </div>
     </div>
 </body>

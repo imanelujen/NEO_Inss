@@ -8,7 +8,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="container mx-auto p-4 max-w-2xl">
-        <h1 class="text-3xl font-bold text-green-600 mb-6 text-center">Votre Devis Assurance Habitation</h1>
+        <h1 class="text-2xl md:text-3xl font-bold text-green mb-6 text-center ">Votre Devis Assurance Habitation</h1>
         @if ($errors->any())
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 <ul>
@@ -21,9 +21,9 @@
         <!-- Progress bar -->
         <div class="mb-8">
             <div class="flex justify-between mb-2">
-                <span class="{{ $step >= 1 ? 'text-green-600 font-bold' : 'text-gray-500' }}">Info propriété</span>
-                <span class="{{ $step >= 2 ? 'text-green-600 font-bold' : 'text-gray-500' }}">Adresse</span>
-                <span class="{{ $step == 3 ? 'text-green-600 font-bold' : 'text-gray-500' }}">Résultat</span>
+                <span class="{{ $step >= 1 ? 'text-green-600 font-bold' : 'text-gray-540' }}">Info propriété</span>
+                <span class="{{ $step >= 2 ? 'text-green-600 font-bold' : 'text-gray-400' }}">Adresse</span>
+                <span class="{{ $step == 3 ? 'text-green-600 font-bold' : 'text-gray-400' }}">Résultat</span>
             </div>
             <div class="w-full bg-gray-300 rounded-full h-2">
                 <div class="bg-green-600 h-2 rounded-full transition-all duration-300" style="width: {{ ($step / 3) * 100 }}%"></div>
@@ -129,7 +129,7 @@
                                         <div class="flex justify-between items-center">
                                             <div>
                                                 <label class="block text-lg font-medium text-gray-800">{{ $label }}</label>
-                                                <p class="text-2xl font-bold text-green-600">{{ number_format($data['formules_choisis'][$key] ?? 0, 2) }} DH/an</p>
+                                                <p class="text-2xl font-bold text-green-700">{{ number_format($data['formules_choisis'][$key] ?? 0, 2) }} DH/an</p>
                                             </div>
                                             <input type="radio" name="offer" value="{{ $key }}" {{ $data['selected_offer'] == $key ? 'checked' : '' }} required class="h-5 w-5 text-green-600">
                                         </div>

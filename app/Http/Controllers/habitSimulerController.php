@@ -328,19 +328,36 @@ class habitSimulerController extends Controller
         }
     }
 
-    public function downloadQuote(Request $request, $devis_id)
-    {
-        Log::info('downloadQuote called', ['devis_id' => $devis_id]);
-        $devis = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
-        $main_devis = Devis::findOrFail($devis_id);
-        if ($main_devis->status !== 'FINALISE') {
-            return redirect()->route('habitation.simulate', ['step' => 3])
-                ->withErrors(['error' => 'Veuillez sélectionner une formule avant de télécharger.']);
-        }
-        $pdf = PDF::loadView('habitation.pdf', ['quote' => $devis, 'offer' => json_decode($main_devis->OFFRE_CHOISIE, true)]);
-        return $pdf->download('devis_habitation_' . $devis->id . '.pdf');
+public function downloadQuote(Request $request, $devis_id)
+{
+    Log::info('downloadQuote called', ['devis_id' => $devis_id]);
+
+    $main_devis = Devis::findOrFail($devis_id);
+    $devis_habitation = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
+    $logement = Logement::findOrFail($devis_habitation->id_logement);
+
+    if ($main_devis->status !== 'FINALISE') {
+        return redirect()->route('habitation.result', ['devis_id' => $devis_id])
+            ->withErrors(['error' => 'Veuillez sélectionner une formule avant de télécharger.']);
     }
 
+    $data = [
+        'housing_type'   => $logement->housing_type,
+        'surface_area'   => $logement->surface_area,
+        'housing_value'  => $logement->housing_value,
+        'ville'          => $logement->ville,
+        'rue'            => $logement->rue,
+        'selected_offer' => json_decode($main_devis->OFFRE_CHOISIE, true)['selected_offer'],
+        'montant_base'   => $main_devis->montant_base,
+    ];
+
+    $pdf = PDF::loadView('habitation.pdf', compact('data'));
+
+    return $pdf->download('devis_habitation_' . $devis_id . '.pdf');
+}
+
+
+    
     public function emailQuote(Request $request, $devis_id)
     {
         Log::info('emailQuote called', ['devis_id' => $devis_id, 'input' => $request->all()]);
