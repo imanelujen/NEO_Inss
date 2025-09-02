@@ -1,0 +1,350 @@
+/* Custom Form Styles - custom-form.css */
+/* Color Variables */
+:root {
+    --primary-pink: #D889E3;
+    --light-pink: #E6A8F0;
+    --soft-pink: #F4D4F7;
+    --pale-pink: #FDEEFF;
+    --primary-blue: #0F2F72;
+    --light-blue: #1E4A8C;
+    --soft-blue: #E8F0FF;
+    --pale-blue: #F5F8FF;
+}
+
+/* Body Background Enhancement */
+body.bg-gray-50 {
+    background: linear-gradient(135deg, var(--pale-pink) 0%, var(--pale-blue) 100%) !important;
+}
+
+/* Main Title Enhancement */
+h1.text-green-600 {
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+
+/* Progress Bar Enhancements */
+.mb-8 {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border: 1px solid rgba(216, 137, 227, 0.1);
+}
+
+/* Progress Steps */
+.flex.justify-between.text-xs.sm\:text-sm.font-medium.mb-2 span {
+    position: relative;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+/* Active step styling */
+.text-green-600.font-bold {
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-blue)) !important;
+    color: white !important;
+    font-weight: 700 !important;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(216, 137, 227, 0.3);
+}
+
+/* Inactive step styling */
+.text-gray-400 {
+    background: #f3f4f6 !important;
+    color: #9ca3af !important;
+}
+
+/* Progress bar container */
+.w-full.bg-gray-200.h-2.rounded-full {
+    background: #e5e7eb !important;
+    height: 8px !important;
+    border-radius: 4px !important;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Progress bar fill */
+.bg-green-600.h-2.rounded-full.transition-all.duration-300 {
+    background: linear-gradient(90deg, var(--primary-pink), var(--primary-blue)) !important;
+    height: 8px !important;
+    border-radius: 4px !important;
+    box-shadow: 0 2px 4px rgba(216, 137, 227, 0.3);
+    position: relative;
+}
+
+/* Animated shine effect on progress bar */
+.bg-green-600.h-2.rounded-full.transition-all.duration-300::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shine 2s infinite;
+}
+
+@keyframes shine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Form Card Enhancement */
+.bg-white.shadow-lg.rounded-xl {
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08) !important;
+    border: 1px solid rgba(216, 137, 227, 0.1) !important;
+}
+
+/* Form Labels Enhancement */
+.text-blue-900 {
+    color: var(--primary-blue) !important;
+    font-weight: 600 !important;
+}
+
+/* Input and Select Enhancements */
+.border.rounded-lg.p-2\.5,
+.border.rounded-lg.p-2 {
+    border: 2px solid #e5e7eb !important;
+    transition: all 0.3s ease !important;
+    background: white !important;
+}
+
+.border.rounded-lg.p-2\.5:focus,
+.border.rounded-lg.p-2:focus {
+    border-color: var(--primary-pink) !important;
+    box-shadow: 0 0 0 3px rgba(216, 137, 227, 0.1) !important;
+    outline: none !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Error States */
+.border-red-500 {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Brand Selection Cards */
+.cursor-pointer.border.rounded-lg.p-3 {
+    border: 2px solid #e5e7eb !important;
+    transition: all 0.3s ease !important;
+    background: white !important;
+    border-radius: 16px !important;
+}
+
+.cursor-pointer.border.rounded-lg.p-3:hover {
+    border-color: var(--light-pink) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(216, 137, 227, 0.2) !important;
+}
+
+.border-red-500.ring-2.ring-red-500 {
+    border-color: var(--primary-pink) !important;
+    background: var(--soft-pink) !important;
+    box-shadow: 0 8px 25px rgba(216, 137, 227, 0.3) !important;
+    ring-color: var(--primary-pink) !important;
+}
+
+/* Button Enhancements */
+.bg-green-600 {
+    background: linear-gradient(135deg, var(--primary-pink), var(--primary-blue)) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.bg-green-600:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(216, 137, 227, 0.4) !important;
+}
+
+.bg-green-600::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent) !important;
+    transition: left 0.5s ease !important;
+}
+
+.bg-green-600:hover::before {
+    left: 100% !important;
+}
+
+.bg-blue-600 {
+    background: linear-gradient(135deg, var(--primary-blue), var(--light-blue)) !important;
+    transition: all 0.3s ease !important;
+}
+
+.bg-blue-600:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(15, 47, 114, 0.4) !important;
+}
+
+/* Gray Button Enhancement */
+.bg-gray-500 {
+    background: #6b7280 !important;
+    transition: all 0.3s ease !important;
+}
+
+.bg-gray-500:hover {
+    background: #4b5563 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+}
+
+/* Alert Enhancements */
+.bg-green-100.border.border-green-400 {
+    background: var(--soft-pink) !important;
+    border-color: var(--primary-pink) !important;
+    border-left: 4px solid var(--primary-pink) !important;
+}
+
+.text-green-700 {
+    color: var(--primary-blue) !important;
+}
+
+.bg-red-100.border.border-red-400 {
+    background: #fee2e2 !important;
+    border-left: 4px solid #ef4444 !important;
+}
+
+/* Insurance Cards Enhancement */
+.border.rounded-lg.p-4 {
+    transition: all 0.3s ease !important;
+    background: white !important;
+    border-radius: 20px !important;
+}
+
+.border.rounded-lg.p-4:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 30px rgba(216, 137, 227, 0.2) !important;
+}
+
+.border-blue-600.bg-blue-50 {
+    border-color: var(--primary-pink) !important;
+    background: var(--soft-pink) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 30px rgba(216, 137, 227, 0.3) !important;
+}
+
+/* Price Text */
+.text-green-700 {
+    color: var(--primary-pink) !important;
+    font-weight: 700 !important;
+}
+
+/* Radio Button Enhancement */
+input[type="radio"]:checked {
+    background-color: var(--primary-pink) !important;
+    border-color: var(--primary-pink) !important;
+}
+
+/* Select Enhancement for Brand Selection */
+.border.border-gray-300.rounded-lg.p-2 {
+    border: 2px solid #e5e7eb !important;
+    transition: all 0.3s ease !important;
+}
+
+.focus\:ring-2.focus\:ring-green-500:focus {
+    border-color: var(--primary-pink) !important;
+    box-shadow: 0 0 0 3px rgba(216, 137, 227, 0.1) !important;
+    outline: none !important;
+}
+
+/* Responsive Improvements */
+@media (max-width: 640px) {
+    .cursor-pointer.border.rounded-lg.p-3 {
+        padding: 0.75rem 0.5rem !important;
+    }
+
+    .cursor-pointer.border.rounded-lg.p-3 img {
+        height: 2rem !important;
+    }
+}
+
+/* Animation Enhancements */
+.transition {
+    transition: all 0.3s ease !important;
+}
+
+/* Focus Ring Colors */
+.focus\:ring-2.focus\:ring-blue-500:focus {
+    border-color: var(--primary-pink) !important;
+    box-shadow: 0 0 0 3px rgba(216, 137, 227, 0.1) !important;
+}
+
+/* Hover Shadow Enhancement */
+.hover\:shadow-md:hover {
+    box-shadow: 0 8px 25px rgba(216, 137, 227, 0.2) !important;
+}
+
+/* Additional Enhancements for Better UX */
+.form-card-header {
+    background: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-blue) 100%) !important;
+    color: white !important;
+    padding: 2rem !important;
+    text-align: center !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.form-card-header::before {
+    content: '' !important;
+    position: absolute !important;
+    top: -50% !important;
+    right: -50% !important;
+    width: 200px !important;
+    height: 200px !important;
+    background: rgba(255,255,255,0.1) !important;
+    border-radius: 50% !important;
+    animation: float 6s ease-in-out infinite !important;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotate(180deg);
+    }
+}
+
+/* Subtle animations for better UX */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeInUp 0.6s ease-out forwards !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--pale-pink);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(var(--primary-pink), var(--primary-blue));
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-blue);
+}

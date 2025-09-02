@@ -8,7 +8,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="container mx-auto p-4 max-w-2xl">
-        <h1 class="text-3xl font-bold text-blue-600 mb-6 text-center">Votre Devis Assurance Habitation</h1>
+        <h1 class="text-3xl font-bold text-green-600 mb-6 text-center">Votre Devis Assurance Habitation</h1>
         @if ($errors->any())
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 <ul>
@@ -21,12 +21,12 @@
         <!-- Progress bar -->
         <div class="mb-8">
             <div class="flex justify-between mb-2">
-                <span class="{{ $step >= 1 ? 'text-blue-600 font-bold' : 'text-gray-500' }}">Info propriété</span>
-                <span class="{{ $step >= 2 ? 'text-blue-600 font-bold' : 'text-gray-500' }}">Adresse</span>
-                <span class="{{ $step == 3 ? 'text-blue-600 font-bold' : 'text-gray-500' }}">Résultat</span>
+                <span class="{{ $step >= 1 ? 'text-green-600 font-bold' : 'text-gray-500' }}">Info propriété</span>
+                <span class="{{ $step >= 2 ? 'text-green-600 font-bold' : 'text-gray-500' }}">Adresse</span>
+                <span class="{{ $step == 3 ? 'text-green-600 font-bold' : 'text-gray-500' }}">Résultat</span>
             </div>
             <div class="w-full bg-gray-300 rounded-full h-2">
-                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: {{ ($step / 3) * 100 }}%"></div>
+                <div class="bg-green-600 h-2 rounded-full transition-all duration-300" style="width: {{ ($step / 3) * 100 }}%"></div>
             </div>
         </div>
         <!-- Form -->
@@ -50,7 +50,7 @@
                     @error('housing_type') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Surface (m²)</label>
+                    <label class="block text-green-700 font-medium mb-2">Surface (m²)</label>
                     <input type="number" name="surface_area" x-model="surface_area" @input="validateSurfaceArea()" value="{{ $data['surface_area'] ?? '' }}" required class="w-full border rounded p-2" :class="{ 'border-red-500': surfaceError }">
                     <span x-show="surfaceError" class="text-red-500 text-sm">La surface est requise.</span>
                     @error('surface_area') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -80,7 +80,7 @@
                 </div>
                 <div class="flex justify-between">
                     <a href="{{ route('habit.simulation.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Réinitialiser</a>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Suivant</button>
+                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Suivant</button>
                 </div>
             @elseif ($step == 2)
                 <div class="mb-4">
@@ -108,7 +108,7 @@
                 </div>
                     <div class="flex justify-between">
                     <a href="{{ route('habit.simulation.show', ['step' => 1]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
-                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Obtenir Devis</button>
+                    <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Obtenir Devis</button>
                 </div>
                 @endif
             </form>
@@ -119,19 +119,19 @@
                     @if (isset($data['devis_status']) && $data['devis_status'] == 'BROUILLON')
                         <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                             <h3 class="text-lg font-semibold mb-4">Choisissez votre formule</h3>
-                            <p class="text-gray-500 text-sm mb-2">Form action: {{ route('habit.select_offer', ['devis_id' => $data['devis_id']]) }}</p>
+
                          <form id="offer-selection-form" method="POST" action="{{ route('habit.select_offer', ['devis_id' => $data['devis_id']]) }}">
                             @csrf
                             <input type="hidden" name="devis_id" value="{{ $data['devis_id'] }}">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 @foreach (['essentiel' => 'Essentiel', 'confort' => 'Confort', 'excellence' => 'Excellence'] as $key => $label)
-                                    <div x-data="{ openCalculation: false, openGaranties: {} }" class="border rounded-lg p-4 {{ $data['selected_offer'] == $key ? 'border-blue-600 bg-blue-50' : 'border-gray-200' }} shadow-sm hover:shadow-md transition">
+                                    <div x-data="{ openCalculation: false, openGaranties: {} }" class="border rounded-lg p-4 {{ $data['selected_offer'] == $key ? 'border-green-600 bg-green-50' : 'border-gray-200' }} shadow-sm hover:shadow-md transition">
                                         <div class="flex justify-between items-center">
                                             <div>
                                                 <label class="block text-lg font-medium text-gray-800">{{ $label }}</label>
-                                                <p class="text-2xl font-bold text-blue-600">{{ number_format($data['formules_choisis'][$key] ?? 0, 2) }} DH/an</p>
+                                                <p class="text-2xl font-bold text-green-600">{{ number_format($data['formules_choisis'][$key] ?? 0, 2) }} DH/an</p>
                                             </div>
-                                            <input type="radio" name="offer" value="{{ $key }}" {{ $data['selected_offer'] == $key ? 'checked' : '' }} required class="h-5 w-5 text-blue-600">
+                                            <input type="radio" name="offer" value="{{ $key }}" {{ $data['selected_offer'] == $key ? 'checked' : '' }} required class="h-5 w-5 text-green-600">
                                         </div>
                                         <h3 class="font-semibold mt-4 mb-2">Garanties incluses</h3>
                                         <ul class="text-sm text-gray-600 space-y-2">
@@ -140,7 +140,7 @@
                                                     <div class="flex justify-between items-center">
                                                         <span>Responsabilité Civile (RC)</span>
                                                         <button @click="open = !open" type="button" class="text-blue-600 hover:text-blue-800 text-xs flex items-center">
-                                                            <span>Détails</span>
+                                                            <span></span>
                                                             <svg x-bind:class="{ 'rotate-180': open }" class="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                             </svg>
@@ -160,7 +160,7 @@ Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (e
                                                         <div class="flex justify-between items-center">
                                                             <span>{{ $garantie }} {{ $garantie != 'Responsabilité Civile (RC)' ? '(' . number_format($data['calculation_factors'][strtolower(str_replace(' ', '_', $garantie)) . '_factor'] ?? 0, 2) . ' DH)' : '' }}</span>
                                                             <button @click="open = !open" type="button" class="text-blue-600 hover:text-blue-800 text-xs flex items-center">
-                                                                <span>Détails</span>
+                                                                <span></span>
                                                                 <svg x-bind:class="{ 'rotate-180': open }" class="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                                 </svg>
@@ -172,22 +172,22 @@ Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (e
                                                     </li>
                                                 @endforeach
                                             @elseif ($key == 'excellence')
-                                                @foreach (['Responsabilité Civile (RC)' => 
+                                                @foreach (['Responsabilité Civile (RC)' =>
                                                 'Obligatoire si tu es locataire : couvre les dommages que tu pourrais causer au logement (incendie, explosion, dégât des eaux transmis aux voisins).
 
-                                                 Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (ex. ton chauffe-eau explose et cause des dégâts à ton voisin).', 
-                                                'Incendie / explosion / foudre' => 'Indemnise les dommages causés par un incendie ou une explosion.', 
-                                                'Vol' => 'Couvre le vol du véhicule ou les dommages liés à une tentative de vol.', 
+                                                 Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (ex. ton chauffe-eau explose et cause des dégâts à ton voisin).',
+                                                'Incendie / explosion / foudre' => 'Indemnise les dommages causés par un incendie ou une explosion.',
+                                                'Vol' => 'Couvre le vol du véhicule ou les dommages liés à une tentative de vol.',
                                                 'Dégâts des eaux' => 'Couvre les Dégâts des eaux du logement ou les dommages liés à Dégâts des eaux.',
-                                                'Bris de glace' => 'Prend en charge la réparation ou le remplacement.', 
-                                                'les Catastrophes naturelles' => 'Couvre les Catastrophes naturelles et événements climatiques (inondation, tempête, tremblement de terre…)', 
+                                                'Bris de glace' => 'Prend en charge la réparation ou le remplacement.',
+                                                'les Catastrophes naturelles' => 'Couvre les Catastrophes naturelles et événements climatiques (inondation, tempête, tremblement de terre…)',
                                                 'Assistance Habitation' => 'Assistance habitation (plombier, serrurier en urgence, relogement provisoire, etc.)',
                                                 ] as $garantie => $description)
                                                     <li x-data="{ open: false }">
                                                         <div class="flex justify-between items-center">
                                                             <span>{{ $garantie }} {{ $garantie != 'Responsabilité Civile (RC)' ? '(' . number_format($data['calculation_factors'][strtolower(str_replace(' ', '_', $garantie)) . '_factor'] ?? 0, 2) . ' DH)' : '' }}</span>
-                                                            <button @click="open = !open" type="button" class="text-blue-600 hover:text-blue-800 text-xs flex items-center">
-                                                                <span>Détails</span>
+                                                            <button @click="open = !open" type="button" class="text-blue-600 hover:text-green-800 text-xs flex items-center">
+                                                                <span></span>
                                                                 <svg x-bind:class="{ 'rotate-180': open }" class="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                                 </svg>
@@ -206,58 +206,25 @@ Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (e
                             @error('offer') <span class="text-red-500 text-sm mt-2 block">{{ $message }}</span> @enderror
                             <div class="flex justify-between mt-6">
                                 <a href="{{ route('habit.simulation.show', ['step' => 2]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
-                                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Confirmer la formule</button>
+                                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Confirmer la formule</button>
                             </div>
                         </form>
-                        
+
                     </div>
-                @else
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                        <p><strong>Formule choisie :</strong> {{ ucfirst($data['selected_offer'] ?? 'Aucune') }}</p>
-                        <p><strong>Montant du devis :</strong> {{ number_format($data['montant_base'] ?? 0, 2) }} DH/an</p>
-                        <div class="mt-6 flex justify-center space-x-4">
-                            <a href="{{ route('habit.download', ['devis_id' => $data['devis_id']]) }}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Télécharger le devis</a>
-                            <form action="{{ route('habit.email', ['devis_id' => $data['devis_id']]) }}" method="POST" class="inline-flex items-center">
-                                @csrf
-                                <input type="email" name="email" placeholder="Votre e-mail" required class="border rounded p-2 mr-2">
-                                <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">Envoyer par e-mail</button>
-                            </form>
-                           <a href="{{ route('habit.subscribe', ['devis_id' => $data['devis_id']]) }}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Souscrire</a>
-                         </div>
-                    </div>
+
                 @endif
                 <div class="mt-6 flex justify-center">
                     <a href="{{ route('habit.simulation.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Nouveau Devis</a>
                 </div>
             </div>
         @else
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                <p>Erreur : Aucun devis trouvé. Veuillez recommencer.</p>
-                <a href="{{ route('habit.simulation.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 mt-4 inline-block">Recommencer</a>
-            </div>
+            <div >
+                <p></p>
+
         @endif
-        
-             <h2 class="text-2xl font-bold text-blue-600 mb-4">Votre Devis Assurance Habitation</h2>
-                    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-                        <p><strong>Type de logement :</strong> {{ $data['housing_type'] }}</p>
-                        <p><strong>Surface :</strong> {{ $data['surface_area'] }} m²</p>
-                        <p><strong>Statut d'occupation :</strong> {{ $data['occupancy_status'] }}</p>
-                        <p><strong>Valeur estimée :</strong> {{ number_format($data['housing_value'], 2) }} DH</p>
-                        <p><strong>Année de construction :</strong> {{ $data['construction_year'] }}</p>
-                        <p><strong>Adresse :</strong> {{ $data['rue'] }}, {{ $data['ville'] }}, {{ $data['code_postal'] }}</p>
-                    </div>
-        <div class="mt-8">
-            <h2 class="text-xl font-bold text-blue-600 mb-4">Actualités (WordPress)</h2>
-            @if (!empty($posts))
-                <ul class="list-disc pl-5">
-                    @foreach ($posts as $post)
-                        <li><a href="{{ $post['link'] }}" class="text-blue-600 hover:underline">{{ $post['title']['rendered'] }}</a></li>
-                    @endforeach
-                </ul>
-            @else
-                <p class="text-gray-600">Aucune actualité disponible.</p>
-            @endif
-        </div>
+
+
+
     </div>
     <script>
         function formValidation() {
@@ -334,9 +301,9 @@ fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=
 })
 .then(data => {
     if (data.address) {
-        document.getElementById("ville").value = data.address.city 
-            || data.address.town 
-            || data.address.village 
+        document.getElementById("ville").value = data.address.city
+            || data.address.town
+            || data.address.village
             || "";
         document.getElementById("rue").value = data.address.road || "";
         document.getElementById("code_postal").value = data.address.postcode || "";

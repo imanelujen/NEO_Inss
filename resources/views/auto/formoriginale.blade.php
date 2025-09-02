@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Devis Assurance Auto - UMBRELLA</title>
+    <title>Devis Assurance Auto - Neo Assurances</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center px-3">
     <div class="container mx-auto max-w-3xl w-full">
         <h1 class="text-2xl md:text-3xl font-bold text-green-600 mb-6 text-center ">Devis Assurance Auto</h1>
-
         @if ($errors->any())
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 shadow-sm text-sm">
                 <ul class="space-y-1">
@@ -294,9 +293,7 @@
             </form>
        @elseif ($step == 3 && isset($data['devis_id']))
             <div class="text-center">
-                <div class="animate-fade-in">
-    <h2 class="text-2xl font-bold text-green-600 mb-6">Votre Devis Assurance Auto</h2>
-          </div>
+                <h2 class="text-2xl font-bold text-green-600 mb-6">Votre Devis Assurance Auto</h2>
                 @if (isset($data['devis_status']) && $data['devis_status'] == 'BROUILLON')
                     <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                         <h2 class="text-2xl font-semibold mb-4 text-center">Choisissez votre formule</h2>

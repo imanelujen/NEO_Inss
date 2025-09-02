@@ -7,6 +7,9 @@ use App\Http\Controllers\habitSimulerController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\StripeWebhookController;
 
+
+use App\Http\Controllers\stylecontroller;
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -23,12 +26,13 @@ Route::post('/logout', [ClientController::class, 'logout'])->name('logout');
 
 // Auto simulation routes
 Route::get('/simulate', [SimulationController::class, 'show'])->name('auto.show');
+Route::get('/simulatetest', [stylecontroller::class, 'show'])->name('auto.showtest');
 Route::post('/simulate', [SimulationController::class, 'store'])->name('auto.store');
 Route::get('/simulate/reset', [SimulationController::class, 'reset'])->name('auto.reset');
 Route::post('/simulate/auto/select-offer/{devis_id}', [SimulationController::class, 'selectOffer'])->name('auto.select_offer');
 Route::get('/simulate/auto/download/{devis_id}', [SimulationController::class, 'downloadQuote'])->name('auto.download');
 Route::post('/simulate/auto/email/{devis_id}', [SimulationController::class, 'emailQuote'])->name('auto.email');
-Route::get('/simulate/auto/result/{devis_id}', [SimulationController::class, 'showQuote'])->name('auto.result');
+Route::get('/simulate/auto/result/{devis_id}', [SimulationController::class, 'showResult'])->name('auto.result');
 
 // Habitation simulation routes
 Route::get('/habit/simulate', [habitSimulerController::class, 'show'])->name('habit.simulation.show');

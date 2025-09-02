@@ -52,7 +52,7 @@ class habitSimulerController extends Controller
             $data['calculation_factors'] = [];
             session(['habit_data' => $data]);
         }
-    
+
 
         return view('habitation.habitform', ['step' => $step, 'data' => $data, 'posts' => []]);
     }
@@ -77,7 +77,7 @@ class habitSimulerController extends Controller
                     ->withErrors(['error' => 'Action non autorisée. Veuillez sélectionner une formule via le formulaire approprié.']);
             }
 
-        
+
         if ($step == 1) {
             $validated = $request->validate([
                'housing_type' => 'required|in:APPARTEMENT,MAISON,PAVILLON,STUDIO,LOFT,VILLA',
@@ -100,7 +100,7 @@ class habitSimulerController extends Controller
                 $sessionData['step1'] = $validated;
                 session(['habit_data' => $sessionData]);
                 return redirect()->route('habit.simulation.show', ['step' => 2]);
-        } 
+        }
         if ($step == 2) {
             if (empty($sessionData['step1'])) {
                     return redirect()->route('habit.simulation.show', ['step' => 1])
@@ -259,31 +259,29 @@ class habitSimulerController extends Controller
         Log::info('showQuote called', ['devis_id' => $devis_id]);
         $devis = Devis::findOrFail($devis_id);
         $devisHabitation = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
+        $logement = Logement::findOrFail($devisHabitation->id_logement);
         $offer_data = json_decode($devis->OFFRE_CHOISIE, true);
         $sessionData = session()->get('habit_data', []);
-        $data = array_merge($sessionData['step1'] ?? [], $sessionData['step2'] ?? []);
-        $calculation_factors = json_decode($devisHabitation->calculation_factors, true) ?? [];
+
+
         // Recalculate formules_choisis
-        $base_amount = $devis->status == 'BROUILLON' ? $devis->montant_base : $devis->montant_base / ($offer_data['offer'] == 'excellence' ? 1.5 : ($offer_data['offer'] == 'confort' ? 1.2 : 1.0));
-        $formules_choisis = [
-            'essentiel' => $base_amount,
-            'confort' => $base_amount * 1.2,
-            'excellence' => $base_amount * 1.5,
-        ];
-        
-        return view('habitation.habitform', [
-            'step' => 3,
-            'data' => array_merge($data, [
-                'devis_id' => $devis->id,
-                'devis_status' => $devis->status,
-                'montant_base' => $devis->montant_base,
-                'selected_offer' => $offer_data['offer'] ?? 'none',
-                'formules_choisis' => $formules_choisis,
-                'calculation_factors'=>$calculation_factors,
-            ]),
-            'posts' => [],
-        ]);
+        $data['devis_id'] = $devis_id;
+        $data['housing_type'] = $logement->housing_type;
+        $data['surface_area'] = $logement->surface_area;
+        $data['housing_value'] = $logement->housing_value;
+        $data['construction_year'] = $logement->construction_year;
+        $data['rue'] = $logement->rue;
+        $data['registration_date'] = $logement->registration_date;
+        $data['occupancy_status'] = $logement->occupancy_status;
+        $data['selected_offer'] = $devis->OFFRE_CHOISIE ? json_decode($devis->OFFRE_CHOISIE, true)['offer'] : null;
+        $data['montant_base'] = $devis->montant_base;
+        $data['devis_status'] = $devis->status;
+        $data['formules_choisis'] = json_decode($devisHabitation->formules_choisis, true);
+        session(['habit_data' => $data, 'intended_devis_id' => $devis_id, 'type' => 'habitation']);
+
+      return view('habitation.result', compact('data', 'devis_id'));
     }
+
     public function selectOffer(Request $request, $devis_id)
     {
         Log::info('selectOffer called', [
@@ -300,18 +298,12 @@ class habitSimulerController extends Controller
 
         try {
             $devis = Devis::findOrFail($devis_id);
-            $offer_factors = [
-                'essentiel' => 1.0,
-                'confort' => 1.2,
-                'excellence' => 1.5,
-            ];
+            $devisHabitation = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
+            $formules_choisis = json_decode($devisHabitation->formules_choisis, true);
+            $montant_base = $formules_choisis[$validated['offer']];
             // Base amount is the original montant_base (essentiel)
-            $base_amount = $devis->montant_base;
-            if ($devis->status != 'BROUILLON') {
-                $offer_data = json_decode($devis->OFFRE_CHOISIE, true);
-                $base_amount = $devis->montant_base / ($offer_data['offer'] == 'excellence' ? 1.5 : ($offer_data['offer'] == 'confort' ? 1.2 : 1.0));
-            }
-            $montant_base = $base_amount * $offer_factors[$validated['offer']];
+
+
             $devis->update([
                 'OFFRE_CHOISIE' => json_encode(['offer' => $validated['offer']]),
                 'montant_base' => $montant_base,
@@ -494,7 +486,7 @@ class habitSimulerController extends Controller
         return redirect()->route('habit.appointment.store', ['devis_id' => $devis_id])
             ->with('success', 'Documents envoyés avec succès.');
     }
-     
+
         public function showcheckout(Request $request, $devis_id)
     {
         Log::info('Showing checkout habitation form', [
@@ -584,7 +576,7 @@ class habitSimulerController extends Controller
                 ->withErrors(['error' => 'Échec de la souscription.']);
         }
     }
-   
+
     public function createAppointment($devis_id)
 {
     return view('habitation.checkout', compact('devis_id'));

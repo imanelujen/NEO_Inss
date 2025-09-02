@@ -76,7 +76,7 @@ class SimulationController extends Controller
                     'make' => 'required|string|max:255',
                     'model' => 'required|string|max:255',
                     'fuel_type' => 'required|in:ESSENCE,DIESEL,ELECTRIQUE,HYBRIDE',
-                    'tax_horsepower' => 'required|integer|min:1',
+                    'tax_horsepower' => 'required|integer|min:5',
                     'vehicle_value' => 'required|numeric|min:1000',
                     'registration_date' => 'required|date|before:today',
                 ], [
@@ -85,7 +85,7 @@ class SimulationController extends Controller
                     'model.required' => 'Le modèle est requis.',
                     'fuel_type.required' => 'Le type de carburant est requis.',
                     'tax_horsepower.required' => 'La puissance fiscale est requise.',
-                    'tax_horsepower.min' => 'La puissance fiscale doit être positive.',
+                    'tax_horsepower.min' => 'La puissance fiscale doit être supérieure ou égale à 5.',
                     'vehicle_value.required' => 'La valeur du véhicule est requise.',
                     'vehicle_value.min' => 'La valeur doit être supérieure ou égale à 1000 DH.',
                     'registration_date.required' => 'La date de mise en circulation est requise.',
@@ -307,7 +307,7 @@ class SimulationController extends Controller
         $data['formules_choisis'] = json_decode($devis_auto->formules_choisis, true);
         session(['auto_data' => $data, 'intended_devis_id' => $devis_id, 'type' => 'auto']);
 
-        return view('auto.form', compact('data', 'devis_id'));
+        return view('auto.result', compact('data', 'devis_id'));
     }
 
     public function selectOffer(Request $request, $devis_id)
@@ -352,18 +352,39 @@ class SimulationController extends Controller
         }
     }
 
-    public function downloadQuote(Request $request, $devis_id)
-    {
-        Log::info('downloadQuote called', ['devis_id' => $devis_id]);
-        $devis = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
-        $main_devis = Devis::findOrFail($devis_id);
-        if ($main_devis->status !== 'FINALISE') {
-            return redirect()->route('auto.result', ['devis_id' => $devis_id])
-                ->withErrors(['error' => 'Veuillez sélectionner une offre avant de télécharger.']);
-        }
-        $pdf = Pdf::loadView('auto.pdf', ['quote' => $devis, 'offer' => json_decode($main_devis->OFFRE_CHOISIE, true)]);
-        return $pdf->download('devis_auto_' . $devis->id . '.pdf');
+public function downloadQuote(Request $request, $devis_id)
+{
+    Log::info('downloadQuote called', ['devis_id' => $devis_id]);
+
+    $main_devis = Devis::findOrFail($devis_id);
+    $devis_auto = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
+
+    if ($main_devis->status !== 'FINALISE') {
+        return redirect()->route('auto.result', ['devis_id' => $devis_id])
+            ->withErrors(['error' => 'Veuillez sélectionner une offre avant de télécharger.']);
     }
+
+    // Prepare data array like in result.blade.php
+    $vehicule = Vehicule::findOrFail($devis_auto->id_vehicule);
+    $conducteur = Conducteur::findOrFail($devis_auto->id_conducteur);
+
+    $data = [
+        'vehicle_type' => $vehicule->vehicle_type,
+        'make' => $vehicule->make,
+        'model' => $vehicule->model,
+        'registration_date' => $vehicule->registration_date,
+        'date_obtention_permis' => $conducteur->date_obtention_permis,
+        'bonus_malus' => 1.00, // fixed value
+        'historique_accidents' => $devis_auto->historique_accidents ?? 'Aucun',
+        'quote_amount' => $main_devis->montant_base,
+        'selected_offer' => json_decode($main_devis->OFFRE_CHOISIE, true)['offer'] ?? 'Aucune',
+    ];
+
+    $pdf = Pdf::loadView('auto.pdf', compact('data'));
+
+    return $pdf->download('devis_auto_' . $devis_id . '.pdf');
+}
+
 
     public function emailQuote(Request $request, $devis_id)
     {
