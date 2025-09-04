@@ -14,6 +14,7 @@ use App\Models\Contrat_habitation;
 use App\Models\Vehicule;
 use App\Models\Agence;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 
 
@@ -39,6 +40,8 @@ class habitSimulerController extends Controller
                 return redirect()->route('habit.simulation.show', ['step' => 1])
                     ->withErrors(['error' => 'Devis non trouvé. Veuillez recommencer.']);
             }
+            $devis_habitation = DevisHabitation::where('id_devis', $data['devis_id'])->firstOrFail();
+
             $offer_data = json_decode($devis->OFFRE_CHOISIE, true);
             $data['devis_status'] = $devis->status;
             $data['montant_base'] = $devis->montant_base;
@@ -328,7 +331,7 @@ class habitSimulerController extends Controller
         }
     }
 
-public function downloadQuote(Request $request, $devis_id)
+    public function downloadQuote(Request $request, $devis_id)
 {
     Log::info('downloadQuote called', ['devis_id' => $devis_id]);
 
@@ -341,13 +344,17 @@ public function downloadQuote(Request $request, $devis_id)
             ->withErrors(['error' => 'Veuillez sélectionner une formule avant de télécharger.']);
     }
 
+    // OFFRE_CHOISIE is stored like ['offer' => 'essentiel'|'confort'|'excellence']
+    $offerData = json_decode($main_devis->OFFRE_CHOISIE, true) ?: [];
+    $selectedOffer = $offerData['offer'] ?? null; // fallback if somehow missing
+
     $data = [
         'housing_type'   => $logement->housing_type,
         'surface_area'   => $logement->surface_area,
         'housing_value'  => $logement->housing_value,
         'ville'          => $logement->ville,
         'rue'            => $logement->rue,
-        'selected_offer' => json_decode($main_devis->OFFRE_CHOISIE, true)['selected_offer'],
+        'selected_offer' => $selectedOffer,          // <- fixed
         'montant_base'   => $main_devis->montant_base,
     ];
 
@@ -355,6 +362,7 @@ public function downloadQuote(Request $request, $devis_id)
 
     return $pdf->download('devis_habitation_' . $devis_id . '.pdf');
 }
+
 
 
     
@@ -383,19 +391,17 @@ public function downloadQuote(Request $request, $devis_id)
 
     public function subscribe(Request $request, $devis_id)
     {
-        Log::info('subscribe called', ['devis_id' => $devis_id]);
-        $main_devis = Devis::findOrFail($devis_id);
-        if ($main_devis->status !== 'FINALISE') {
-            return redirect()->route('habit.simulation.show', ['step' => 3])
-                ->withErrors(['error' => 'Veuillez sélectionner une formule avant de souscrire.']);
+        if (!Auth::guard('api_clients')->check()) {
+        session(['intended_devis_id' => $devis_id, 'type' => 'habitation']);
+        Log::info('User not authenticated, redirecting to register', ['devis_id' => $devis_id]);
+        return redirect()->route('register.show');
         }
-        if (!auth('api_clients')->check()) {
-            session(['devis_id' => $devis_id, 'type' => 'habitation']);
-            return redirect()->route('login.show');
-        }
-        $devis = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
-      //  return view('habitation.documents', ['devis' => $devis, 'offer' => json_decode($main_devis->OFFRE_CHOISIE, true)]);
-          return redirect()->route('habit.documents', ['devis_id' => $devis_id]);
+
+        Log::info('User authenticated, redirecting to documents', [
+        'devis_id' => $devis_id,
+        'client_id' => Auth::guard('api_clients')->id(),
+         ]);
+       return redirect()->route('habit.documents', ['devis_id' => $devis_id]);
     }
 
          public function showDocuments($devis_id)
@@ -422,27 +428,43 @@ public function downloadQuote(Request $request, $devis_id)
         return view('habitation.documents', compact('devis_id', 'agences', 'data'));
     }
 
-        public function storeDocuments(Request $request, $devis_id)
+       public function storeDocuments(Request $request, $devis_id)
     {
-        Log::info('Storing documents', [
-            'devis_id' => $devis_id,
-            'session_id' => session()->getId(),
-            'session_data' => session()->all(),
-            'client_id' => Auth::guard('api_clients')->id(),
-        ]);
+         Log::info('📥 Incoming request', $request->all());
 
-        $validated = $request->validate([
+         try {
+           $validated = $request->validate([
             'titre_foncier' => 'required|file|mimes:jpg,png|max:2048',
             'cin_recto' => 'required|file|mimes:jpg,png|max:2048',
             'cin_verso' => 'required|file|mimes:jpg,png|max:2048',
             'agence_id' => 'required|exists:agences,id',
-        ]);
+           ]);
+           Log::info('✅ Validation passed', $validated);
+         } catch (\Illuminate\Validation\ValidationException $e) {
+         Log::error('❌ Validation failed', $e->errors());
+           throw $e; // will redirect back with errors
+           }
 
-        $client = Auth::guard('api_clients')->user();
-        $devis = Devis::findOrFail($devis_id);
-        $devisHabitation = DevisHabitation::where('id_devis', $devis_id)->firstOrFail();
+    $client = Auth::guard('api_clients')->user();
+    Log::info('👤 Client found?', ['client' => $client]);
 
-        $logement = logement::findOrFail($devisHabitation->id_logement);
+    $devis = Devis::findOrFail($devis_id);
+
+if ($devis->typedevis !== 'HABIT') {
+    Log::error('❌ Wrong flow: tried to use habitation controller with AUTO devis', [
+        'devis_id' => $devis_id,
+        'typedevis' => $devis->typedevis,
+    ]);
+    abort(400, 'Mauvais type de devis pour ce flux.');
+}
+
+    Log::info('📑 Devis found?', ['devis' => $devis]);
+
+    $devisHabitation = DevisHabitation::where('id_devis', $devis_id)->first();
+    Log::info('🏠 DevisHabitation found?', ['devisHabitation' => $devisHabitation]);
+
+    $logement = logement::find($devisHabitation->id_logement ?? null);
+    Log::info('🏡 Logement found?', ['logement' => $logement]);
 
         // Store files in storage/app/public/documents/{client_id}
         $filePaths = [];
@@ -500,8 +522,11 @@ public function downloadQuote(Request $request, $devis_id)
             'agence_id' => $validated['agence_id'],
         ]);
 
-        return redirect()->route('habit.appointment.store', ['devis_id' => $devis_id])
-            ->with('success', 'Documents envoyés avec succès.');
+
+        Log::info('✅ Ready to redirect to appointment', ['devis_id' => $devis_id]);
+        return redirect()->route('habit.appointment.create', ['devis_id' => $devis_id])
+        ->with('success', 'Documents envoyés avec succès.');
+
     }
 
         public function showcheckout(Request $request, $devis_id)
@@ -529,11 +554,12 @@ public function downloadQuote(Request $request, $devis_id)
             'garanties' => $garanties,
         ];
 
-        return view('habitation.checkout', [
+        return view('habitation.appointement', [
             'paymentDetails' => $paymentDetails,
             'devis_id' => $devis_id,
         ]);
     }
+
     public function storeSubscription(Request $request, $devis_id)
     {
         Log::info('storeSubscription called', ['devis_id' => $devis_id, 'input' => $request->all()]);
@@ -596,7 +622,7 @@ public function downloadQuote(Request $request, $devis_id)
 
     public function createAppointment($devis_id)
 {
-    return view('habitation.checkout', compact('devis_id'));
+    return view('habitation.appointement', compact('devis_id'));
 }
      public function storeAppointment(Request $request, $devis_id)
     {
@@ -613,7 +639,7 @@ public function downloadQuote(Request $request, $devis_id)
             'status' => 'pending'
         ]);
 
-        return redirect()->route('habit.documents', $devis_id)
+        return redirect()->route('habit.result', $devis_id)
             ->with('success', 'Votre rendez-vous a été enregistré. Nous allons vous contacter pour confirmation.');
     }
 

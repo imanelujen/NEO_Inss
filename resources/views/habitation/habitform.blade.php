@@ -6,7 +6,7 @@
     <title>Devis Assurance Habitation - Neo Assurances</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<body class="bg-gray-50 min-h-screen flex items-center justify-center px-3">
     <div class="container mx-auto p-4 max-w-2xl">
         <h1 class="text-2xl md:text-3xl font-bold text-green mb-6 text-center ">Votre Devis Assurance Habitation</h1>
         @if ($errors->any())
@@ -36,7 +36,7 @@
                 <input type="hidden" name="step" value="{{ $step }}">
                 @if ($step == 1)
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Sélectionnez votre type de logement</label>
+                    <label class="block text-green-700 font-medium mb-2">Sélectionnez votre type de logement</label>
                     <select name="housing_type" x-model="housing_type" @change="validateHousingType()" required class="w-full border rounded p-2" :class="{ 'border-red-500': housingTypeError }">
                         <option value="" disabled selected>Sélectionner</option>
                         <option value="APPARTEMENT">Appartement</option>
@@ -56,7 +56,7 @@
                     @error('surface_area') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Statut d'Occupation</label>
+                    <label class="block text-green-700 font-medium mb-2">Statut d'Occupation</label>
                     <select name="occupancy_status" x-model="occupancy_status" @change="validateOccupancyStatus()" required class="w-full border rounded p-2" :class="{ 'border-red-500': occupancyStatusError }">
                         <option value="" disabled selected>Sélectionner</option>
                         <option value="Locataire">Locataire</option>
@@ -67,13 +67,13 @@
                     @error('occupancy_status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Valeur de la maison (DH)</label>
+                    <label class="block text-green-700 font-medium mb-2">Valeur de la maison (DH)</label>
                     <input type="number" name="housing_value" x-model="housing_value" @input="validateHouseValue()" value="{{ $data['housing_value'] ?? '' }}" min="10000" required class="w-full border rounded p-2" :class="{ 'border-red-500': houseValueError }">
                     <span x-show="houseValueError" class="text-red-500 text-sm">La valeur doit être supérieure ou égale à 10000 DH.</span>
                     @error('housing_value') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Date de construction</label>
+                    <label class="block text-green-700 font-medium mb-2">Date de construction</label>
                     <input type="number" name="construction_year" x-model="construction_year" min="1800" max="{{ now()->year }}" placeholder="YYYY" @input="validateConstructionYear()" value="{{ $data['construction_year'] ?? '' }}" required class="w-full border rounded p-2" :class="{ 'border-red-500': constructionYearError }">
                     <span x-show="constructionYearError" class="text-red-500 text-sm">L'année doit être comprise entre 1800 et {{ date('Y') }}.</span>
                     @error('construction_year') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -84,19 +84,19 @@
                 </div>
             @elseif ($step == 2)
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Ville</label>
+                    <label class="block text-green-700 font-medium mb-2">Ville</label>
                     <input type="text" id="ville" name="ville" x-model="ville" @input="validateVille()" value="{{ $data['ville'] ?? '' }}" required class="w-full border rounded p-2" :class="{ 'border-red-500': villeError }">
                     <span x-show="villeError" class="text-red-500 text-sm">La ville est requise.</span>
                     @error('ville') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Rue</label>
+                    <label class="block text-green-700 font-medium mb-2">Rue</label>
                     <input type="text" id="rue" name="rue" x-model="rue" @input="validateRue()" value="{{ $data['rue'] ?? '' }}" required class="w-full border rounded p-2" :class="{ 'border-red-500': rueError }">
                     <span x-show="rueError" class="text-red-500 text-sm">La rue est requise.</span>
                     @error('rue') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Code postal</label>
+                    <label class="block text-green-700 font-medium mb-2">Code postal</label>
                     <input type="text" id="code_postal" name="code_postal" x-model="code_postal" @input="validateCodePostal()" value="{{ $data['code_postal'] ?? '' }}" required class="w-full border rounded p-2" :class="{ 'border-red-500': codePostalError }">
                     <span x-show="codePostalError" class="text-red-500 text-sm">Le code postal est requis.</span>
                     @error('code_postal') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -104,10 +104,10 @@
 
                 <div class="mb-4 ">
                     <button type="button" onclick="getLocation()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Utiliser ma position actuelle</button>
-                <p id="location-status" class="text-sm text-gray-600 mt-2"></p>
+                <p id="location-status" class="text-sm text-green-600 mt-2"></p>
                 </div>
                     <div class="flex justify-between">
-                    <a href="{{ route('habit.simulation.show', ['step' => 1]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
+                    <a href="{{ route('habit.simulation.show', ['step' => 1]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-green-600">Retour</a>
                     <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Obtenir Devis</button>
                 </div>
                 @endif
@@ -139,14 +139,14 @@
                                                 <li x-data="{ open: false }">
                                                     <div class="flex justify-between items-center">
                                                         <span>Responsabilité Civile (RC)</span>
-                                                        <button @click="open = !open" type="button" class="text-blue-600 hover:text-blue-800 text-xs flex items-center">
+                                                        <button @click="open = !open" type="button" class="text-green-600 hover:text-green-800 text-xs flex items-center">
                                                             <span></span>
                                                             <svg x-bind:class="{ 'rotate-180': open }" class="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                             </svg>
                                                         </button>
                                                     </div>
-                                                    <div x-show="open" class="mt-1 text-xs bg-gray-50 p-2 rounded">
+                                                    <div x-show="open" class="mt-1 text-xs bg-green-50 p-2 rounded">
                                                         Obligatoire si tu es locataire : couvre les dommages que tu pourrais causer au logement (incendie, explosion, dégât des eaux transmis aux voisins).
 
                                                         Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (ex. ton chauffe-eau explose et cause des dégâts à ton voisin).
@@ -159,7 +159,7 @@ Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (e
                                                     <li x-data="{ open: false }">
                                                         <div class="flex justify-between items-center">
                                                             <span>{{ $garantie }} {{ $garantie != 'Responsabilité Civile (RC)' ? '(' . number_format($data['calculation_factors'][strtolower(str_replace(' ', '_', $garantie)) . '_factor'] ?? 0, 2) . ' DH)' : '' }}</span>
-                                                            <button @click="open = !open" type="button" class="text-blue-600 hover:text-blue-800 text-xs flex items-center">
+                                                            <button @click="open = !open" type="button" class="text-green-600 hover:text-green-800 text-xs flex items-center">
                                                                 <span></span>
                                                                 <svg x-bind:class="{ 'rotate-180': open }" class="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -186,7 +186,7 @@ Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (e
                                                     <li x-data="{ open: false }">
                                                         <div class="flex justify-between items-center">
                                                             <span>{{ $garantie }} {{ $garantie != 'Responsabilité Civile (RC)' ? '(' . number_format($data['calculation_factors'][strtolower(str_replace(' ', '_', $garantie)) . '_factor'] ?? 0, 2) . ' DH)' : '' }}</span>
-                                                            <button @click="open = !open" type="button" class="text-blue-600 hover:text-green-800 text-xs flex items-center">
+                                                            <button @click="open = !open" type="button" class="text-green-600 hover:text-green-800 text-xs flex items-center">
                                                                 <span></span>
                                                                 <svg x-bind:class="{ 'rotate-180': open }" class="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -205,7 +205,7 @@ Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (e
                             </div>
                             @error('offer') <span class="text-red-500 text-sm mt-2 block">{{ $message }}</span> @enderror
                             <div class="flex justify-between mt-6">
-                                <a href="{{ route('habit.simulation.show', ['step' => 2]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
+                                <a href="{{ route('habit.simulation.show', ['step' => 2]) }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Retour</a>
                                 <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Confirmer la formule</button>
                             </div>
                         </form>
@@ -214,7 +214,7 @@ Si tu es propriétaire, elle protège aussi contre les réclamations de tiers (e
 
                 @endif
                 <div class="mt-6 flex justify-center">
-                    <a href="{{ route('habit.simulation.reset') }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Nouveau Devis</a>
+                    <a href="{{ route('habit.simulation.reset') }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Nouveau Devis</a>
                 </div>
             </div>
         @else

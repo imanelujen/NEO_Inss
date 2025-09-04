@@ -10,7 +10,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto p-4 max-w-4xl">
-        <h1 class="text-2xl font-bold text-blue-600 mb-6 text-center">Finaliser votre contrat</h1>
+        <h1 class="text-2xl font-bold text-green mb-6 text-center">Finaliser votre contrat</h1>
         @if ($errors->any())
             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                 <ul>
@@ -48,7 +48,7 @@
             <h2 class="text-xl font-semibold mb-4">Choisir une agence</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 @foreach ($agences as $agence)
-                    <div x-data="{ mapLoaded: false }" class="border rounded-lg p-4" :class="{ 'border-blue-600 bg-blue-50': selectedAgence == {{ $agence->id }} }" @click="selectedAgence = {{ $agence->id }}; $refs.agenceRadio{{ $agence->id }}.checked = true">
+                    <div x-data="{ mapLoaded: false }" class="border rounded-lg p-4" :class="{ 'border-green-600 bg-green-50': selectedAgence == {{ $agence->id }} }" @click="selectedAgence = {{ $agence->id }}; $refs.agenceRadio{{ $agence->id }}.checked = true">
                         <div class="flex justify-between items-center">
                             <div>
                                 <h3 class="text-lg font-medium">{{ $agence->name }}</h3>
@@ -56,9 +56,9 @@
                                 <p class="text-sm text-gray-600">Tél: {{ $agence->phone }}</p>
                                 <p class="text-sm text-gray-600">Email: {{ $agence->email }}</p>
                             </div>
-                            <input type="radio" name="agence_id" value="{{ $agence->id }}" x-ref="agenceRadio{{ $agence->id }}" :checked="selectedAgence == {{ $agence->id }}" required class="h-5 w-5 text-blue-600">
+                            <input type="radio" name="agence_id" value="{{ $agence->id }}" x-ref="agenceRadio{{ $agence->id }}" :checked="selectedAgence == {{ $agence->id }}" required class="h-5 w-5 text-green-600">
                         </div>
-                        <button @click="mapLoaded = !mapLoaded" type="button" class="mt-2 text-blue-600 hover:text-blue-800 text-sm flex items-center">
+                        <button @click="mapLoaded = !mapLoaded" type="button" class="mt-2 text-green-600 hover:text-green-800 text-sm flex items-center">
                             <span x-text="mapLoaded ? 'Masquer la carte' : 'Voir la carte'"></span>
                             <svg x-bind:class="{ 'rotate-180': mapLoaded }" class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -80,7 +80,7 @@
             @error('agence_id') <span class="text-red-500 text-sm mb-4 block">{{ $message }}</span> @enderror
             <div class="flex justify-between">
                 <a href="{{ route('habit.result', ['devis_id' => $devis_id]) }}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Retour</a>
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Finaliser le contrat</button>
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Finaliser le contrat</button>
             </div>
         </form>
     </div>

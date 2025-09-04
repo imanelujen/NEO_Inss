@@ -4,7 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\AgencesResource\Pages;
 use App\Filament\Resources\AgencesResource\RelationManagers;
-use App\Models\Agences;
+use App\Models\Agence;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class AgencesResource extends Resource
 {
-    protected static ?string $model = Agences::class;
+    protected static ?string $model = Agence::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-collection';
 

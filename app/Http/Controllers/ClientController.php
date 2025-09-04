@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Database\QueryException;
-use App\Models\DevisAuto;
-use App\Models\Vehicule;
-use App\Models\Conducteur;
+use App\Models\Devis;
 
 class ClientController extends Controller
 {
@@ -61,13 +59,24 @@ class ClientController extends Controller
             ]);
 
             $intended_devis_id = session('intended_devis_id');
-            if ($intended_devis_id && session('type') === 'auto') {
-                Log::info('Redirecting to auto.documents after login', ['devis_id' => $intended_devis_id]);
-                return redirect()->route('auto.documents', ['devis_id' => $intended_devis_id]);
+            $type = session('type');
+
+            if ($intended_devis_id) {
+                $devis = Devis::find($intended_devis_id);
+                $type = $devis?->typedevis ?? $type;
+
+                if (strtoupper($type) === 'AUTO') {
+                    return redirect()->route('auto.documents', ['devis_id' => $intended_devis_id]);
+                } elseif (strtoupper($type) === 'HABITATION' || strtoupper($type) === 'HABIT') {
+                    return redirect()->route('habit.documents', ['devis_id' => $intended_devis_id]);
+                }
             }
 
-            return redirect()->route('auto.show', ['step' => 1])
-                ->with('success', 'Connexion réussie.');
+            Log::info('No valid intended devis or type, redirecting to auto simulation', [
+                'intended_devis_id' => $intended_devis_id,
+                'type' => $type,
+            ]);
+            return redirect()->route('auto.simulation.show', ['step' => 1])->with('success', 'Connexion réussie.');
         }
 
         Log::warning('Client login failed', [
@@ -93,21 +102,21 @@ class ClientController extends Controller
             'prenom' => 'required|string|max:255',
             'email' => 'required|email|unique:clients,email',
             'phone' => 'required|string|regex:/^\+?[1-9]\d{1,14}$/',
+            'password' => 'required|string|min:8|confirmed', // Added password validation
         ]);
 
         try {
-            $password = Str::random(12);
             $client = Client::create([
                 'name' => $validated['name'],
                 'prenom' => $validated['prenom'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
-                'password' => bcrypt($password),
+                'password' => bcrypt($validated['password']),
                 'statut' => 'ACTIF',
                 'date_inscription' => now()->toDateString(),
             ]);
 
-            Mail::to($client->email)->send(new ClientRegistered($client, $password));
+            Mail::to($client->email)->send(new ClientRegistered($client, $validated['password']));
             Log::info('Email sent with password', ['email' => $client->email]);
 
             Auth::guard('api_clients')->login($client);
@@ -129,17 +138,24 @@ class ClientController extends Controller
             ]);
 
             $intended_devis_id = session('intended_devis_id');
-            if ($intended_devis_id && session('type') === 'auto') {
-                Log::info('Redirecting to auto.documents', ['devis_id' => $intended_devis_id]);
-                return redirect()->route('auto.documents', ['devis_id' => $intended_devis_id]);
+            $type = session('type');
+
+            if ($intended_devis_id) {
+                $devis = Devis::find($intended_devis_id);
+                $type = $devis?->typedevis ?? $type;
+
+                if (strtoupper($type) === 'AUTO') {
+                    return redirect()->route('auto.documents', ['devis_id' => $intended_devis_id]);
+                } elseif (strtoupper($type) === 'HABITATION' || strtoupper($type) === 'HABIT') {
+                    return redirect()->route('habit.documents', ['devis_id' => $intended_devis_id]);
+                }
             }
 
-            Log::warning('No intended_devis_id or type not auto, redirecting to auto.show', [
+            Log::info('No valid intended devis or type, redirecting to auto simulation', [
                 'intended_devis_id' => $intended_devis_id,
-                'type' => session('type'),
+                'type' => $type,
             ]);
-            return redirect()->route('auto.show', ['step' => 1])
-                ->with('success', 'Inscription réussie. Veuillez vous connecter.');
+            return redirect()->route('auto.simulation.show', ['step' => 1])->with('success', 'Inscription réussie.');
         } catch (QueryException $e) {
             Log::error('Database error during registration: ' . $e->getMessage(), [
                 'sql' => $e->getSql(),
@@ -147,15 +163,12 @@ class ClientController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                return redirect()->route('register.show')
-                    ->withErrors(['email' => 'Cet email est déjà utilisé.']);
+                return redirect()->route('client.register')->withErrors(['email' => 'Cet email est déjà utilisé.']);
             }
-            return redirect()->route('register.show')
-                ->withErrors(['error' => 'Erreur de base de données. Veuillez réessayer.']);
+            return redirect()->route('client.register')->withErrors(['error' => 'Erreur de base de données. Veuillez réessayer.']);
         } catch (\Exception $e) {
             Log::error('Registration error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return redirect()->route('register.show')
-                ->withErrors(['error' => 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.']);
+            return redirect()->route('client.register')->withErrors(['error' => 'Une erreur est survenue lors de l\'inscription. Veuillez réessayer.']);
         }
     }
 
@@ -172,6 +185,6 @@ class ClientController extends Controller
         $request->session()->regenerate();
 
         Log::info('User logged out', ['session_id' => session()->getId()]);
-        return redirect()->route('auto.show', ['step' => 1]);
+        return redirect()->route('auto.simulation.show', ['step' => 1]);
     }
 }
