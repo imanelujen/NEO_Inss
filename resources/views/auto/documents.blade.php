@@ -42,7 +42,7 @@
             <!-- Documents Upload -->
             <div>
                 <h2 class="text-xl font-semibold mb-4">Télécharger les documents</h2>
-                <p class="text-sm text-gray-500 mb-4">Formats acceptés : JPG, PNG</p>
+                <p class="text-sm text-gray-500 mb-4">Formats acceptés : JPG, PNG, JPEG</p>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     @foreach ([
                         'carte_grise' => 'Carte Grise',

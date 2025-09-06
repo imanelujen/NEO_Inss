@@ -460,28 +460,38 @@ public function downloadQuote(Request $request, $devis_id)
 
     public function storeDocuments(Request $request, $devis_id)
     {
+        
         Log::info('Storing documents', [
             'devis_id' => $devis_id,
             'session_id' => session()->getId(),
             'session_data' => session()->all(),
             'client_id' => Auth::guard('api_clients')->id(),
         ]);
+        Log::info('Files received', [
+    'carte_grise' => $request->file('carte_grise'),
+    'permis' => $request->file('permis'),
+    'cin_recto' => $request->file('cin_recto'),
+    'cin_verso' => $request->file('cin_verso'),
+]);
 
         $validated = $request->validate([
-            'carte_grise' => 'required|file|mimes:jpg,png|max:2048',
-            'permis' => 'required|file|mimes:jpg,png|max:2048',
-            'cin_recto' => 'required|file|mimes:jpg,png|max:2048',
-            'cin_verso' => 'required|file|mimes:jpg,png|max:2048',
+            'carte_grise' => 'required|file|mimes:jpg,png,jpeg|max:2048',
+            'permis' => 'required|file|mimes:jpg,png,jpeg|max:2048',
+            'cin_recto' => 'required|file|mimes:jpg,png,jpeg|max:2048',
+            'cin_verso' => 'required|file|mimes:jpg,png,jpeg|max:2048',
             'agence_id' => 'required|exists:agences,id',
         ]);
-
+Log::info('Documents validated', $validated);
         $client = Auth::guard('api_clients')->user();
+        Log::info('cleint aythenticated');
         $devis = Devis::findOrFail($devis_id);
+        Log::info('devis found', ['devis_id' => $devis_id, 'devis_status' => $devis->status]);
         $devisAuto = DevisAuto::where('id_devis', $devis_id)->firstOrFail();
-
+        Log::info('devisAuto found', ['devis_auto_id' => $devisAuto->id, 'devis_id' => $devis_id]);
         $vehicule = Vehicule::findOrFail($devisAuto->id_vehicule);
+        Log::info('vehicule found', ['vehicule_id' => $vehicule->id, 'devis_id' => $devis_id]);
         $conducteur = Conducteur::findOrFail($devisAuto->id_conducteur);
-
+        Log::info('conducteur found', ['conducteur_id' => $conducteur->id, 'devis_id' => $devis_id]);
         // Store files in storage/app/public/documents/{client_id}
         $filePaths = [];
         foreach (['carte_grise', 'permis', 'cin_recto', 'cin_verso'] as $fileType) {

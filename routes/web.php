@@ -45,16 +45,18 @@ Route::get('/habitation/result/{devis_id}', [habitSimulerController::class, 'sho
 
 // Protected client routes
 Route::middleware(['auth:api_clients'])->group(function () {
-    Route::get('/simulate/auto/subscribe/{devis_id}', [SimulationController::class, 'subscribe'])->name('auto.subscribe');
-    Route::post('/simulate/auto/subscribe/{devis_id}', [SimulationController::class, 'storeSubscription'])->name('auto.store_subscription');
-    Route::get('/subscribe/documents/{devis_id}', [SimulationController::class, 'showDocuments'])->name('auto.documents');
-    Route::post('/subscribe/documents/{devis_id}', [SimulationController::class, 'storeDocuments'])->name('auto.documents.store');
-    Route::get('/subscribe/payment/{devis_id}', [SimulationController::class, 'showPayment'])->name('auto.payment');
-    Route::post('/subscribe/payment/{devis_id}', [SimulationController::class, 'storePayment'])->name('auto.payment.store');
+    Route::get('/auto/subscribe/{devis_id}', [SimulationController::class, 'subscribe'])->name('auto.subscribe');
+    Route::post('/auto/subscribe/{devis_id}', [SimulationController::class, 'storeSubscription'])->name('auto.store_subscription');
+
+// AUTO documents
+    Route::get('/auto/subscribe/documents/{devis_id}', [SimulationController::class, 'showDocuments'])->name('auto.documents');
+    Route::post('/auto/subscribe/documents/{devis_id}', [SimulationController::class, 'storeDocuments'])->name('auto.documents.store');
+
+    Route::get('/auto/subscribe/payment/{devis_id}', [SimulationController::class, 'showPayment'])->name('auto.payment');
+    Route::post('/auto/subscribe/payment/{devis_id}', [SimulationController::class, 'storePayment'])->name('auto.payment.store');
     Route::get('/habit/simulate/subscribe/{devis_id}', [habitSimulerController::class, 'subscribe'])->name('habit.subscribe');
     Route::post('/habit/simulate/subscribe/{devis_id}', [habitSimulerController::class, 'storeSubscription'])->name('habit.store_subscription');
     Route::get('/auto/{devis_id}/payment-intent', [SimulationController::class, 'createPaymentIntent'])->name('auto.payment.intent');
-    Route::post('/auto/{devis_id}/payment-store', [SimulationController::class, 'storePayment'])->name('auto.payment.store');
     Route::post('habit/subscribe/documents/{devis_id}', [habitSimulerController::class, 'storeDocuments'])->name('habit.documents.store');
     Route::get('habit/subscribe/documents/{devis_id}', [habitSimulerController::class, 'showDocuments'])->name('habit.documents');
     Route::post('/habit/{devis_id}/appointment', [habitSimulerController::class, 'storeAppointment'])->name('habit.appointment.store');
